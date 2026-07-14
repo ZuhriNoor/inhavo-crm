@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Odoo-inspired color palette */
+  --color-sidebar: #2c3e50;
+  --color-sidebar-dark: #1a252f;
+  --color-sidebar-hover: #34495e;
+  --color-sidebar-active: #875a7b;
+  --color-accent: #875a7b;
+  --color-accent-light: #a06090;
+  --color-accent-hover: #9b6b8e;
+
+  --color-primary: #00a09d;
+  --color-primary-light: #00b5b0;
+
+  --color-surface: #f9fafb;
+  --color-card: #ffffff;
+  --color-border: #e5e7eb;
+  --color-border-light: #f0f0f0;
+
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+
+  /* Stage colors */
+  --color-stage-lead: #3b82f6;
+  --color-stage-opportunity: #f59e0b;
+  --color-stage-quotation: #8b5cf6;
+  --color-stage-won: #10b981;
+  --color-stage-lost: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Kanban column scroll */
+.kanban-column {
+  min-height: 200px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+/* Drag overlay */
+.drag-overlay {
+  opacity: 0.85;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Kanban card hover */
+.kanban-card {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.kanban-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Sidebar transitions */
+.sidebar-link {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Notification badge pulse */
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.notification-badge {
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 50;
+}
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #875a7b;
+  outline-offset: 2px;
+}
+
+/* PDF view hide */
+@media print {
+  .no-print { display: none !important; }
+}

@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+
+    function isAssignedToStore(storeId) {
+      return isAuthenticated() &&
+        (isAdmin() || storeId in getUserData().assignedStores);
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // All authenticated users can read basic profiles (needed for assigning leads)
+      allow read: if isAuthenticated();
+      // A user can create ONLY their own profile document (bootstrap), OR Admins can create them
+      allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
+      // Admins can update/delete any user profile
+      allow update, delete: if isAdmin();
+      // Users can update their own profile
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Stores collection
+    match /stores/{storeId} {
+      // All authenticated users can read stores (to see store names)
+      allow read: if isAuthenticated();
+      // Only admins can create/edit/delete stores
+      allow write: if isAdmin();
+    }
+
+    // Pipeline stages
+    match /stages/{stageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Leads — scoped to store assignment
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in getUserData().assignedStores);
+      allow update, delete: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+    }
+
+    // Tasks — scoped to store assignment
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in getUserData().assignedStores);
+      allow update, delete: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+    }
+
+    // Quotations — scoped to store assignment
+    match /quotations/{quotationId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in getUserData().assignedStores);
+      allow update: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow delete: if isAdmin();
+    }
+
+    // Notifications — users can only read/write their own
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
