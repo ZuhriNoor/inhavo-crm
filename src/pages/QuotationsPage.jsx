@@ -8,11 +8,14 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
+import QuotationModal from '../components/quotations/QuotationModal';
+import { Plus } from 'lucide-react';
 
 const QuotationsPage = () => {
   const { activeStore } = useStore();
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!activeStore) return;
@@ -46,7 +49,7 @@ const QuotationsPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Quotation_${q.id.slice(-6).toUpperCase()}.pdf`;
+      link.download = `${(q.customerDetails?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_')}_${q.quotationNumber || q.id.slice(-6).toUpperCase()}.pdf`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (err) {
@@ -75,13 +78,25 @@ const QuotationsPage = () => {
             {quotations.length}
           </span>
         </div>
-        <button
-          onClick={loadData}
-          disabled={loading}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            title="Refresh"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+          
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg transition-all"
+            style={{ background: '#875a7b' }}
+          >
+            <Plus size={15} />
+            New Quotation
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -108,11 +123,9 @@ const QuotationsPage = () => {
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800">
-                    Quotation #{q.id.slice(-6).toUpperCase()}
+                    {q.customerDetails?.name || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {q.customerDetails?.name || 'Unknown customer'}
-                    {' · '}
                     {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
                   </p>
                 </div>
@@ -140,6 +153,17 @@ const QuotationsPage = () => {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <QuotationModal
+          storeId={activeStore.id}
+          onClose={() => setShowModal(false)}
+          onSaved={() => {
+            setShowModal(false);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -84,5 +84,11 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Counters — used for sequential IDs (Quotations)
+    match /counters/{counterId} {
+      // Anyone who can create a quotation needs to read/write the counter
+      allow read, write: if isAuthenticated();
+    }
   }
 }

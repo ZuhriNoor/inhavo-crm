@@ -9,6 +9,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -31,13 +32,40 @@ export const getQuotation = async (id) => {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
-/** Create a quotation record */
+/** Create a quotation record with sequential ID */
 export const createQuotation = async (data) => {
-  const ref_ = await addDoc(collection(db, QUOTATIONS_COL), {
-    ...data,
-    createdAt: serverTimestamp(),
+  return await runTransaction(db, async (transaction) => {
+    const counterRef = doc(db, 'counters', 'quotationCounters');
+    const counterDoc = await transaction.get(counterRef);
+
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const monthKey = `${yy}${mm}`;
+
+    let nextCount = 1;
+    if (counterDoc.exists()) {
+      const counters = counterDoc.data();
+      if (counters[monthKey]) {
+        nextCount = counters[monthKey] + 1;
+      }
+    }
+
+    const quotationNumber = `INH${monthKey}${String(nextCount).padStart(3, '0')}`;
+
+    // Update counter
+    transaction.set(counterRef, { [monthKey]: nextCount }, { merge: true });
+
+    // Create quotation
+    const newQuotationRef = doc(collection(db, QUOTATIONS_COL));
+    transaction.set(newQuotationRef, {
+      ...data,
+      quotationNumber,
+      createdAt: serverTimestamp(),
+    });
+
+    return { id: newQuotationRef.id, quotationNumber };
   });
-  return ref_.id;
 };
 
 /** Update a quotation (e.g., attach PDF URL) */

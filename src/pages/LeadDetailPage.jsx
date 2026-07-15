@@ -16,6 +16,8 @@ import { useStore } from '../contexts/StoreContext';
 import LeadModal from '../components/leads/LeadModal';
 import TaskModal from '../components/tasks/TaskModal';
 import QuotationModal from '../components/quotations/QuotationModal';
+import { pdf } from '@react-pdf/renderer';
+import QuotationPDF from '../utils/pdfTemplate';
 
 const InfoRow = ({ icon: Icon, label, value }) => {
   if (!value) return null;
@@ -54,6 +56,26 @@ const LeadDetailPage = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownload = async (q) => {
+    setDownloadingId(q.id);
+    try {
+      const pdfDoc = <QuotationPDF quotation={q} />;
+      const blob = await pdf(pdfDoc).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${(q.customerDetails?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_')}_${q.quotationNumber || q.id.slice(-6).toUpperCase()}.pdf`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      alert('Failed to generate PDF');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -304,7 +326,7 @@ const LeadDetailPage = () => {
                         <FileText size={18} className="text-purple-400 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800">
-                            Quotation #{q.id.slice(-6).toUpperCase()}
+                            {q.customerDetails?.name || lead?.customerName || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
                           </p>
                           <p className="text-xs text-gray-400">
                             {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
@@ -312,16 +334,17 @@ const LeadDetailPage = () => {
                             ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
                           </p>
                         </div>
-                        {q.pdfUrl && (
-                          <a
-                            href={q.pdfUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all"
-                          >
-                            Download PDF
-                          </a>
-                        )}
+                        <button
+                          onClick={() => handleDownload(q)}
+                          disabled={downloadingId === q.id}
+                          className="px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
+                        >
+                          {downloadingId === q.id ? (
+                            <span className="spinner w-3 h-3 border-purple-600" />
+                          ) : (
+                            'Download PDF'
+                          )}
+                        </button>
                       </div>
                     ))}
                   </div>

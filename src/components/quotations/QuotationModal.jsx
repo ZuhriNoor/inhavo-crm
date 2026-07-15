@@ -10,24 +10,42 @@ import QuotationPDF from '../../utils/pdfTemplate';
 const inputCls =
   'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all';
 
+const defaultTerms = `• A deposit of 50% of the total amount is required to confirm your order, 30% after completion of production and balance 20% is payable before delivery.
+• Delivery Location Should be Accessible by Vehicle
+• Delivery will be till the Ground Floor unless there is a Service Lift
+• Sold Products Cannot be exchanged or cancelled.
+• Unloading Charges of the Trade Union must be paid by the Customer
+• Gst And Transportation extra`;
+
 const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
   const { user } = useAuth();
   const [generating, setGenerating] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
 
-  const { register, control, handleSubmit, watch, formState: { isSubmitting } } = useForm({
+  const { register, control, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm({
     defaultValues: {
       customerName: lead?.customerName || '',
       customerEmail: lead?.email || '',
       customerPhone: lead?.phone || '',
       customerAddress: lead?.address || '',
-      notes: '',
-      items: [{ name: '', description: '', qty: 1, unitPrice: 0 }],
+      notes: defaultTerms,
+      items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const items = watch('items');
+
+  const handlePhotoChange = (idx, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue(`items.${idx}.photo`, reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const totalAmount = items.reduce((sum, item) => {
     return sum + (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
@@ -37,7 +55,7 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
     setGenerating(true);
     try {
       const payload = {
-        leadId: lead?.id,
+        ...(lead?.id ? { leadId: lead.id } : {}),
         storeId,
         customerDetails: {
           name: data.customerName,
@@ -52,11 +70,11 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
         pdfUrl: '',
       };
 
-      // Create Firestore record first to get an ID
-      const quotationId = await createQuotation(payload);
+      // Create Firestore record first to get an ID and sequential number
+      const { id, quotationNumber } = await createQuotation(payload);
 
       // Generate PDF blob
-      const pdfDoc = <QuotationPDF quotation={{ ...payload, id: quotationId }} />;
+      const pdfDoc = <QuotationPDF quotation={{ ...payload, id, quotationNumber }} />;
       const blob = await pdf(pdfDoc).toBlob();
 
       // Create a local blob URL
@@ -65,7 +83,7 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
       // Auto-trigger download
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `Quotation_${quotationId.slice(-6).toUpperCase()}.pdf`;
+      link.download = `${data.customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${quotationNumber}.pdf`;
       link.click();
 
       setPdfUrl(blobUrl);
@@ -154,7 +172,7 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
                 </h3>
                 <button
                   type="button"
-                  onClick={() => append({ name: '', description: '', qty: 1, unitPrice: 0 })}
+                  onClick={() => append({ name: '', description: '', photo: '', qty: 1, unitPrice: 0 })}
                   className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800"
                 >
                   <Plus size={13} /> Add Item
@@ -162,18 +180,30 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
               </div>
 
               {/* Table header */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-xs font-medium text-gray-400 mb-2 px-1">
-                <span>Item</span>
-                <span className="w-16 text-center">Qty</span>
-                <span className="w-24 text-center">Unit Price</span>
-                <span className="w-20 text-right">Total</span>
+              <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-400 mb-2 px-1">
+                <span className="col-span-3">Photo</span>
+                <span className="col-span-4">Item Details</span>
+                <span className="col-span-2 text-center">Qty</span>
+                <span className="col-span-2 text-center">Rate</span>
+                <span className="col-span-1 text-right">Total</span>
               </div>
 
               {fields.map((field, idx) => {
                 const rowTotal = (Number(items[idx]?.qty) || 0) * (Number(items[idx]?.unitPrice) || 0);
                 return (
-                  <div key={field.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 mb-2 items-start">
-                    <div className="space-y-1">
+                  <div key={field.id} className="grid grid-cols-12 gap-2 mb-2 items-start">
+                    <div className="col-span-3 space-y-1">
+                      {items[idx]?.photo && (
+                        <img src={items[idx].photo} alt="Preview" className="w-full h-12 object-contain bg-gray-50 border border-gray-200 rounded" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handlePhotoChange(idx, e)}
+                        className="w-full text-[10px] text-gray-500 overflow-hidden file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                      />
+                    </div>
+                    <div className="col-span-4 space-y-1">
                       <input
                         {...register(`items.${idx}.name`, { required: true })}
                         className={inputCls}
@@ -185,28 +215,32 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
                         placeholder="Description (optional)"
                       />
                     </div>
-                    <input
-                      {...register(`items.${idx}.qty`)}
-                      type="number"
-                      min="1"
-                      className={inputCls + ' w-16 text-center'}
-                    />
-                    <input
-                      {...register(`items.${idx}.unitPrice`)}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className={inputCls + ' w-24 text-right'}
-                    />
-                    <div className="flex items-center justify-end gap-1 pt-2">
-                      <span className="text-sm font-medium text-gray-700 w-16 text-right">
+                    <div className="col-span-2">
+                      <input
+                        {...register(`items.${idx}.qty`)}
+                        type="number"
+                        min="1"
+                        className={inputCls + ' text-center'}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        {...register(`items.${idx}.unitPrice`)}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={inputCls + ' text-right'}
+                      />
+                    </div>
+                    <div className="col-span-1 flex items-center justify-end gap-1 pt-2">
+                      <span className="text-sm font-medium text-gray-700 text-right truncate">
                         ₹{rowTotal.toLocaleString('en-IN')}
                       </span>
                       {fields.length > 1 && (
                         <button
                           type="button"
                           onClick={() => remove(idx)}
-                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded flex-shrink-0"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -227,11 +261,28 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-gray-600">Notes & Terms</label>
+                <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    defaultChecked={true}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setValue('notes', defaultTerms);
+                      } else {
+                        setValue('notes', '');
+                      }
+                    }}
+                  />
+                  Use default terms
+                </label>
+              </div>
               <textarea
                 {...register('notes')}
-                rows={2}
-                className={inputCls + ' resize-none'}
+                rows={6}
+                className={inputCls + ' resize-none text-[13px] leading-relaxed'}
                 placeholder="Terms, conditions, or additional notes…"
               />
             </div>
