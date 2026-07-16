@@ -40,11 +40,12 @@ const LoginPage = () => {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-screen flex items-center justify-center p-8 lg:p-12"
       style={{ background: 'linear-gradient(135deg, #1a252f 0%, #2c3e50 50%, #875a7b22 100%)' }}
     >
-      {/* Left branding panel */}
-      <div className="hidden lg:flex flex-col justify-center px-16 w-[420px] shrink-0">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24 w-full max-w-5xl">
+        {/* Left branding panel */}
+        <div className="hidden lg:flex flex-col justify-center w-[360px] shrink-0">
         <div className="mb-8">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-6"
@@ -70,9 +71,8 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right login form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
+        {/* Right login form */}
+        <div className="w-full max-w-md shrink-0">
           <div className="bg-white rounded-2xl shadow-2xl p-10">
             {/* Mobile logo */}
             <div className="lg:hidden flex items-center gap-3 mb-8">
