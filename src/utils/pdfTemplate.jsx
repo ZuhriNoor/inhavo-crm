@@ -183,7 +183,7 @@ const QuotationPDF = ({ quotation }) => {
         {items.map((item, idx) => {
           const rowTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
           return (
-            <View key={idx} style={styles.tableRow}>
+            <View key={idx} style={styles.tableRow} wrap={false}>
               <Text style={[styles.cellText, styles.colNo]}>{idx + 1}</Text>
               <View style={styles.colPhoto}>
                 {item.photo ? (
@@ -207,16 +207,16 @@ const QuotationPDF = ({ quotation }) => {
           );
         })}
 
-        <View style={styles.totalRow}>
+        <View style={styles.totalRow} wrap={false}>
           <Text style={styles.totalLabel}>Grand Total:</Text>
           <Text style={styles.totalValue}>Rs. {formatNumber(totalAmount)}</Text>
-          </View>
+        </View>
 
         {/* Horizontal line (brown) before terms */}
-        <View style={[styles.brownLine, { marginTop: 20 }]} />
+        <View style={[styles.brownLine, { marginTop: 20 }]} wrap={false} />
 
         {/* Terms and conditions */}
-        <View style={styles.termsContainer}>
+        <View style={styles.termsContainer} wrap={false}>
           <Text style={styles.termsTitle}>Terms and conditions</Text>
           <Text style={styles.termsText}>{notes || 'No special terms.'}</Text>
         </View>
