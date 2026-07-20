@@ -57,6 +57,7 @@ const LeadDetailPage = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [editingQuotation, setEditingQuotation] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
 
   const handleDownload = async (q) => {
@@ -335,7 +336,10 @@ const LeadDetailPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-700">Quotations</h3>
                   <button
-                    onClick={() => setShowQuotationModal(true)}
+                    onClick={() => {
+                      setEditingQuotation(null);
+                      setShowQuotationModal(true);
+                    }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg"
                     style={{ background: '#875a7b' }}
                   >
@@ -364,17 +368,29 @@ const LeadDetailPage = () => {
                             ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
                           </p>
                         </div>
-                        <button
-                          onClick={() => handleDownload(q)}
-                          disabled={downloadingId === q.id}
-                          className="px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
-                        >
-                          {downloadingId === q.id ? (
-                            <span className="spinner w-3 h-3 border-purple-600" />
-                          ) : (
-                            'Download PDF'
-                          )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingQuotation(q);
+                              setShowQuotationModal(true);
+                            }}
+                            className="p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all border border-transparent"
+                            title="Edit"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDownload(q)}
+                            disabled={downloadingId === q.id}
+                            className="px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
+                          >
+                            {downloadingId === q.id ? (
+                              <span className="spinner w-3 h-3 border-purple-600" />
+                            ) : (
+                              'Download PDF'
+                            )}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -409,8 +425,12 @@ const LeadDetailPage = () => {
       {showQuotationModal && (
         <QuotationModal
           lead={lead}
-          storeId={lead?.storeId || activeStore?.id}
-          onClose={() => setShowQuotationModal(false)}
+          storeId={activeStore.id}
+          editingQuotation={editingQuotation}
+          onClose={() => {
+            setShowQuotationModal(false);
+            setEditingQuotation(null);
+          }}
           onSaved={loadData}
         />
       )}

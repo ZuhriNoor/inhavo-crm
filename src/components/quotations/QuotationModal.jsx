@@ -1,9 +1,9 @@
 // QuotationModal — generates a quotation and triggers PDF
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
-import { createQuotation } from '../../services/quotationsService';
+import { createQuotation, updateQuotation } from '../../services/quotationsService';
 import { useAuth } from '../../contexts/AuthContext';
 import QuotationPDF from '../../utils/pdfTemplate';
 
@@ -17,12 +17,12 @@ const defaultTerms = `• A deposit of 50% of the total amount is required to co
 • Unloading Charges of the Trade Union must be paid by the Customer
 • Gst And Transportation extra`;
 
-const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
+const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) => {
   const { user } = useAuth();
   const [generating, setGenerating] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
 
-  const { register, control, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm({
+  const { register, control, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm({
     defaultValues: {
       customerName: lead?.customerName || '',
       customerEmail: lead?.email || '',
@@ -32,6 +32,20 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
       items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
     },
   });
+
+  // Pre-fill if editing
+  useEffect(() => {
+    if (editingQuotation) {
+      reset({
+        customerName: editingQuotation.customerDetails?.name || '',
+        customerEmail: editingQuotation.customerDetails?.email || '',
+        customerPhone: editingQuotation.customerDetails?.phone || '',
+        customerAddress: editingQuotation.customerDetails?.address || '',
+        notes: editingQuotation.notes || '',
+        items: editingQuotation.items?.length ? editingQuotation.items : [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
+      });
+    }
+  }, [editingQuotation, reset]);
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const items = watch('items');
@@ -70,8 +84,18 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
         pdfUrl: '',
       };
 
-      // Create Firestore record first to get an ID and sequential number
-      const { id, quotationNumber } = await createQuotation(payload);
+      let id = editingQuotation?.id;
+      let quotationNumber = editingQuotation?.quotationNumber;
+
+      if (editingQuotation) {
+        // Update existing record
+        await updateQuotation(id, payload);
+      } else {
+        // Create new Firestore record to get an ID and sequential number
+        const result = await createQuotation(payload);
+        id = result.id;
+        quotationNumber = result.quotationNumber;
+      }
 
       // Generate PDF blob
       const pdfDoc = <QuotationPDF quotation={{ ...payload, id, quotationNumber }} />;
@@ -131,7 +155,9 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Generate Quotation</h2>
+          <h2 className="text-lg font-semibold text-gray-800">
+            {editingQuotation ? 'Edit Quotation' : 'New Quotation'}
+          </h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
             <X size={18} />
           </button>

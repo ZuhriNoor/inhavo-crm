@@ -15,7 +15,7 @@ import { db } from './firebase';
 const STORES_COL = 'stores';
 
 export const getStores = async () => {
-  const q = query(collection(db, STORES_COL), orderBy('name'));
+  const q = query(collection(db, STORES_COL), orderBy('createdAt', 'asc'));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };

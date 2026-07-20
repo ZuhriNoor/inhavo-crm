@@ -1,6 +1,6 @@
 // QuotationsPage — list of all quotations across the active store
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, ExternalLink, RefreshCw } from 'lucide-react';
+import { FileText, ExternalLink, RefreshCw, Edit2 } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { getTasks } from '../services/tasksService';
 import { formatDate } from '../utils/helpers';
@@ -16,6 +16,7 @@ const QuotationsPage = () => {
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingQuote, setEditingQuote] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!activeStore) return;
@@ -89,7 +90,10 @@ const QuotationsPage = () => {
           </button>
           
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setEditingQuote(null);
+              setShowModal(true);
+            }}
             className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg transition-all"
             style={{ background: '#875a7b' }}
           >
@@ -136,6 +140,16 @@ const QuotationsPage = () => {
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => {
+                      setEditingQuote(q);
+                      setShowModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 bg-gray-50 rounded-lg hover:bg-gray-100 hover:text-gray-800 transition-all"
+                  >
+                    <Edit2 size={13} />
+                    Edit
+                  </button>
+                  <button
                     onClick={() => handleDownload(q)}
                     disabled={downloadingId === q.id}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
@@ -143,9 +157,11 @@ const QuotationsPage = () => {
                     {downloadingId === q.id ? (
                       <span className="spinner w-3 h-3 border-purple-600" />
                     ) : (
-                      <ExternalLink size={12} />
+                      <>
+                        <ExternalLink size={13} />
+                        Download PDF
+                      </>
                     )}
-                    Download PDF
                   </button>
                 </div>
               </div>
@@ -157,11 +173,12 @@ const QuotationsPage = () => {
       {showModal && (
         <QuotationModal
           storeId={activeStore.id}
-          onClose={() => setShowModal(false)}
-          onSaved={() => {
+          editingQuotation={editingQuote}
+          onClose={() => {
             setShowModal(false);
-            loadData();
+            setEditingQuote(null);
           }}
+          onSaved={loadData}
         />
       )}
     </div>
