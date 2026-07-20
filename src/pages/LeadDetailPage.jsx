@@ -17,6 +17,7 @@ import { useStore } from '../contexts/StoreContext';
 import LeadModal from '../components/leads/LeadModal';
 import TaskModal from '../components/tasks/TaskModal';
 import QuotationModal from '../components/quotations/QuotationModal';
+import QuotationDetailModal from '../components/quotations/QuotationDetailModal';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
 
@@ -58,6 +59,7 @@ const LeadDetailPage = () => {
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [editingQuotation, setEditingQuotation] = useState(null);
+  const [viewingQuotation, setViewingQuotation] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
 
   const handleDownload = async (q) => {
@@ -355,7 +357,8 @@ const LeadDetailPage = () => {
                     {quotations.map((q) => (
                       <div
                         key={q.id}
-                        className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-200"
+                        onClick={() => setViewingQuotation(q)}
+                        className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
                       >
                         <FileText size={18} className="text-purple-400 shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -370,7 +373,8 @@ const LeadDetailPage = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingQuotation(q);
                               setShowQuotationModal(true);
                             }}
@@ -380,7 +384,10 @@ const LeadDetailPage = () => {
                             <Edit2 size={13} />
                           </button>
                           <button
-                            onClick={() => handleDownload(q)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownload(q);
+                            }}
                             disabled={downloadingId === q.id}
                             className="px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
                           >
@@ -432,6 +439,19 @@ const LeadDetailPage = () => {
             setEditingQuotation(null);
           }}
           onSaved={loadData}
+        />
+      )}
+      {viewingQuotation && (
+        <QuotationDetailModal
+          quotation={viewingQuotation}
+          onClose={() => setViewingQuotation(null)}
+          isDownloading={downloadingId === viewingQuotation.id}
+          onEdit={() => {
+            setViewingQuotation(null);
+            setEditingQuotation(viewingQuotation);
+            setShowQuotationModal(true);
+          }}
+          onDownload={() => handleDownload(viewingQuotation)}
         />
       )}
     </div>

@@ -9,6 +9,7 @@ import { db } from '../services/firebase';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
 import QuotationModal from '../components/quotations/QuotationModal';
+import QuotationDetailModal from '../components/quotations/QuotationDetailModal';
 import { Plus } from 'lucide-react';
 
 const QuotationsPage = () => {
@@ -17,6 +18,7 @@ const QuotationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingQuote, setEditingQuote] = useState(null);
+  const [viewingQuote, setViewingQuote] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!activeStore) return;
@@ -119,7 +121,8 @@ const QuotationsPage = () => {
             {quotations.map((q) => (
               <div
                 key={q.id}
-                className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm transition-all"
+                onClick={() => setViewingQuote(q)}
+                className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
               >
                 <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
                   <FileText size={18} className="text-purple-500" />
@@ -140,7 +143,8 @@ const QuotationsPage = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setEditingQuote(q);
                       setShowModal(true);
                     }}
@@ -150,7 +154,10 @@ const QuotationsPage = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDownload(q)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(q);
+                    }}
                     disabled={downloadingId === q.id}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
                   >
@@ -179,6 +186,20 @@ const QuotationsPage = () => {
             setEditingQuote(null);
           }}
           onSaved={loadData}
+        />
+      )}
+
+      {viewingQuote && (
+        <QuotationDetailModal
+          quotation={viewingQuote}
+          onClose={() => setViewingQuote(null)}
+          isDownloading={downloadingId === viewingQuote.id}
+          onEdit={() => {
+            setViewingQuote(null);
+            setEditingQuote(viewingQuote);
+            setShowModal(true);
+          }}
+          onDownload={() => handleDownload(viewingQuote)}
         />
       )}
     </div>

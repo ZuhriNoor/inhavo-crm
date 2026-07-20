@@ -20,6 +20,7 @@ const defaultTerms = `• A deposit of 50% of the total amount is required to co
 const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) => {
   const { user } = useAuth();
   const [generating, setGenerating] = useState(false);
+  const [submitAction, setSubmitAction] = useState('download'); // 'save' | 'download'
   const [pdfUrl, setPdfUrl] = useState('');
 
   const { register, control, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm({
@@ -95,6 +96,13 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         const result = await createQuotation(payload);
         id = result.id;
         quotationNumber = result.quotationNumber;
+      }
+
+      if (submitAction === 'save') {
+        setGenerating(false);
+        onSaved?.();
+        onClose?.();
+        return;
       }
 
       // Generate PDF blob
@@ -196,13 +204,6 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                   Products / Services
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => append({ name: '', description: '', photo: '', qty: 1, unitPrice: 0 })}
-                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800"
-                >
-                  <Plus size={13} /> Add Item
-                </button>
               </div>
 
               {/* Table header */}
@@ -277,6 +278,15 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                 );
               })}
 
+              <div className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => append({ name: '', description: '', photo: '', qty: 1, unitPrice: 0 })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 font-medium rounded-lg hover:bg-purple-50 transition-all border border-dashed border-purple-200 w-full justify-center"
+                >
+                  <Plus size={14} /> Add Another Item
+                </button>
+              </div>
               {/* Total */}
               <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
                 <span className="text-sm text-gray-500">Total:</span>
@@ -322,14 +332,23 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
             </button>
             <button
               type="submit"
+              onClick={() => setSubmitAction('save')}
+              disabled={isSubmitting || generating}
+              className="px-5 py-2 text-sm font-medium rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 disabled:opacity-60 transition-colors"
+            >
+              {generating && submitAction === 'save' ? 'Saving...' : 'Save Only'}
+            </button>
+            <button
+              type="submit"
+              onClick={() => setSubmitAction('download')}
               disabled={isSubmitting || generating}
               className="px-5 py-2 text-sm text-white font-medium rounded-lg flex items-center gap-2 disabled:opacity-60"
               style={{ background: '#875a7b' }}
             >
-              {generating ? (
+              {generating && submitAction === 'download' ? (
                 <><span className="spinner w-3 h-3 border-white" /> Generating PDF…</>
               ) : (
-                'Generate & Download'
+                'Save & Download PDF'
               )}
             </button>
           </div>
