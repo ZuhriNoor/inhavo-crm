@@ -33,8 +33,21 @@ const KanbanBoard = ({ stages, leads, users, onAddLead, onLeadsChange }) => {
   );
 
   const getLeadsForStage = useCallback(
-    (stageId) => localLeads.filter((l) => l.stageId === stageId),
-    [localLeads],
+    (stageId) => {
+      let stageLeads = localLeads.filter((l) => l.stageId === stageId);
+      const stage = stages.find((s) => s.id === stageId);
+      if (stage && stage.name.match(/won|lost/i)) {
+        // Sort descending by creation/update time and take top 10
+        stageLeads.sort((a, b) => {
+          const tA = a.updatedAt?.toDate?.() || a.createdAt?.toDate?.() || 0;
+          const tB = b.updatedAt?.toDate?.() || b.createdAt?.toDate?.() || 0;
+          return tB - tA;
+        });
+        stageLeads = stageLeads.slice(0, 10);
+      }
+      return stageLeads;
+    },
+    [localLeads, stages],
   );
 
   const findLeadById = (id) => localLeads.find((l) => l.id === id);

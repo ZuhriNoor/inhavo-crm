@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Trash2, Phone, Mail, MapPin, Building2,
   Calendar, User, StickyNote, Plus, CheckSquare, FileText, Tag,
+  Globe, IndianRupee, Target, Star, Briefcase
 } from 'lucide-react';
 import { getLead, deleteLead } from '../services/leadsService';
 import { getTasksByLead } from '../services/tasksService';
@@ -143,12 +144,21 @@ const LeadDetailPage = () => {
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold text-gray-800 truncate">
-            {lead.customerName}
-          </h1>
-          {lead.company && (
-            <p className="text-xs text-gray-400">{lead.company}</p>
-          )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-semibold text-gray-800 truncate">
+              {lead.opportunityTitle || lead.customerName}
+            </h1>
+            {lead.priority > 0 && (
+              <div className="flex items-center text-yellow-400">
+                {Array.from({ length: lead.priority }).map((_, i) => (
+                  <Star key={i} size={14} fill="currentColor" />
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-400">
+            {lead.customerName}{lead.company ? ` · ${lead.company}` : ''}
+          </p>
         </div>
         {/* Stage badge */}
         {currentStage && (
@@ -181,32 +191,52 @@ const LeadDetailPage = () => {
         {/* Left: Lead info */}
         <div className="w-72 shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-5 space-y-1">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Sales Details
+          </h3>
+          <InfoRow icon={IndianRupee} label="Expected Revenue" value={lead.expectedRevenue ? `₹${lead.expectedRevenue.toLocaleString('en-IN')}` : null} />
+          <InfoRow 
+            icon={Target} 
+            label="Expected Closing" 
+            value={lead.expectedClosingDate ? formatDate(lead.expectedClosingDate?.toDate?.() || lead.expectedClosingDate) : null} 
+          />
+          <InfoRow icon={Globe} label="Lead Source" value={lead.source} />
+          <InfoRow
+            icon={User}
+            label="Assigned To"
+            value={assignedUser?.displayName || 'Unassigned'}
+          />
+
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 mt-6 pt-6 border-t border-gray-100">
             Contact Information
           </h3>
           <InfoRow icon={User} label="Customer" value={lead.customerName} />
           <InfoRow icon={Building2} label="Company" value={lead.company} />
           <InfoRow icon={Phone} label="Phone" value={lead.phone} />
           <InfoRow icon={Mail} label="Email" value={lead.email} />
-          <InfoRow icon={MapPin} label="Address" value={lead.address} />
-          <InfoRow
-            icon={User}
-            label="Assigned To"
-            value={assignedUser?.displayName || 'Unassigned'}
-          />
-          <InfoRow
-            icon={Calendar}
-            label="Next Follow-up"
-            value={lead.nextFollowUp ? formatDate(lead.nextFollowUp?.toDate?.() || lead.nextFollowUp) : null}
-          />
+          <InfoRow icon={MapPin} label="Location" value={lead.address} />
 
-          {lead.notes && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
-                Notes
-              </p>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
-                {lead.notes}
-              </p>
+          {(lead.lookingFor || lead.notes || lead.nextFollowUp) && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                Additional Details
+              </h3>
+              <InfoRow
+                icon={Calendar}
+                label="Next Follow-up"
+                value={lead.nextFollowUp ? formatDate(lead.nextFollowUp?.toDate?.() || lead.nextFollowUp) : null}
+              />
+              {lead.lookingFor && (
+                <div className="py-2">
+                  <p className="text-xs text-gray-400 mb-1">Looking For (Products)</p>
+                  <p className="text-sm text-gray-800 font-medium whitespace-pre-wrap">{lead.lookingFor}</p>
+                </div>
+              )}
+              {lead.notes && (
+                <div className="py-2 mt-2">
+                  <p className="text-xs text-gray-400 mb-1">Notes</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{lead.notes}</p>
+                </div>
+              )}
             </div>
           )}
         </div>

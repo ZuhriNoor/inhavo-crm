@@ -1,7 +1,7 @@
 // LeadModal — Create/Edit lead form in a modal dialog
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, User, Building2, Phone, Mail, MapPin, Calendar, StickyNote } from 'lucide-react';
+import { X, User, Building2, Phone, Mail, MapPin, Calendar, StickyNote, Star, Target, Globe, IndianRupee, Briefcase } from 'lucide-react';
 import { createLead, updateLead } from '../../services/leadsService';
 import { notifyLeadAssigned } from '../../services/notificationsService';
 import { toInputDate, fromInputDate } from '../../utils/helpers';
@@ -33,14 +33,22 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
+      opportunityTitle: '',
       customerName: '',
       company: '',
       phone: '',
       email: '',
       address: '',
+      source: '',
+      expectedRevenue: '',
+      expectedClosingDate: '',
+      lookingFor: '',
+      priority: 0,
       assignedUserId: user?.uid || '',
       stageId: stages?.[0]?.id || '',
       notes: '',
@@ -48,15 +56,23 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
     },
   });
 
+  const currentPriority = watch('priority');
+
   // Pre-fill when editing
   useEffect(() => {
     if (lead) {
       reset({
+        opportunityTitle: lead.opportunityTitle || '',
         customerName: lead.customerName || '',
         company: lead.company || '',
         phone: lead.phone || '',
         email: lead.email || '',
         address: lead.address || '',
+        source: lead.source || '',
+        expectedRevenue: lead.expectedRevenue || '',
+        expectedClosingDate: lead.expectedClosingDate ? toInputDate(lead.expectedClosingDate) : '',
+        lookingFor: lead.lookingFor || '',
+        priority: lead.priority || 0,
         assignedUserId: lead.assignedUserId || '',
         stageId: lead.stageId || stages?.[0]?.id || '',
         notes: lead.notes || '',
@@ -69,6 +85,8 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
     const payload = {
       ...data,
       storeId,
+      expectedRevenue: Number(data.expectedRevenue) || 0,
+      expectedClosingDate: data.expectedClosingDate ? fromInputDate(data.expectedClosingDate) : null,
       nextFollowUp: data.nextFollowUp ? fromInputDate(data.nextFollowUp) : null,
       createdBy: user?.uid,
     };
@@ -111,34 +129,36 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
 
         {/* Form body */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 space-y-4">
-            {/* Customer Name */}
-            <Field label="Customer Name *" icon={User} error={errors.customerName?.message}>
-              <input
-                {...register('customerName', { required: 'Customer name is required' })}
-                className={inputCls(true)}
-                placeholder="John Smith"
-              />
-            </Field>
-
-            {/* Company */}
-            <Field label="Company" icon={Building2}>
-              <input
-                {...register('company')}
-                className={inputCls(true)}
-                placeholder="Acme Corp"
-              />
-            </Field>
-
-            {/* Phone & Email */}
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Phone" icon={Phone}>
+          <div className="px-6 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
+            
+            {/* LEFT COLUMN */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Core Information</h3>
+              
+              <Field label="Opportunity Title *" icon={Briefcase} error={errors.opportunityTitle?.message}>
                 <input
-                  {...register('phone')}
+                  {...register('opportunityTitle', { required: 'Title is required' })}
+                  className={inputCls(true)}
+                  placeholder="e.g. 50 Laptops for ACME"
+                />
+              </Field>
+
+              <Field label="Customer Name *" icon={User} error={errors.customerName?.message}>
+                <input
+                  {...register('customerName', { required: 'Customer name is required' })}
+                  className={inputCls(true)}
+                  placeholder="John Smith"
+                />
+              </Field>
+
+              <Field label="Phone *" icon={Phone} error={errors.phone?.message}>
+                <input
+                  {...register('phone', { required: 'Phone is required' })}
                   className={inputCls(true)}
                   placeholder="+91 98765 43210"
                 />
               </Field>
+
               <Field label="Email" icon={Mail}>
                 <input
                   {...register('email')}
@@ -147,66 +167,106 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                   placeholder="john@example.com"
                 />
               </Field>
+
+              <Field label="Address / Location *" icon={MapPin} error={errors.address?.message}>
+                <input
+                  {...register('address', { required: 'Location is required' })}
+                  className={inputCls(true)}
+                  placeholder="123 Main St, Mumbai"
+                />
+              </Field>
+              
+              <Field label="Company" icon={Building2}>
+                <input {...register('company')} className={inputCls(true)} placeholder="Acme Corp" />
+              </Field>
+
+              <Field label="Lead Source" icon={Globe}>
+                <input {...register('source')} className={inputCls(true)} placeholder="e.g. Website, Referral" />
+              </Field>
             </div>
 
-            {/* Address */}
-            <Field label="Address" icon={MapPin}>
-              <input
-                {...register('address')}
-                className={inputCls(true)}
-                placeholder="123 Main St, Mumbai"
-              />
-            </Field>
+            {/* RIGHT COLUMN */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sales Details</h3>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setValue('priority', currentPriority === star ? 0 : star)}
+                      className={`transition-colors ${
+                        star <= currentPriority ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-200'
+                      }`}
+                    >
+                      <Star size={16} fill={star <= currentPriority ? "currentColor" : "none"} />
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* Stage & Assignee */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Stage</label>
-                <select
-                  {...register('stageId')}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
-                >
-                  {stages?.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Expected Revenue" icon={IndianRupee}>
+                  <input
+                    {...register('expectedRevenue')}
+                    type="number"
+                    className={inputCls(true)}
+                    placeholder="0.00"
+                  />
+                </Field>
+                <Field label="Expected Closing" icon={Target}>
+                  <input
+                    {...register('expectedClosingDate')}
+                    type="date"
+                    className={inputCls(true)}
+                  />
+                </Field>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Assigned To</label>
-                <select
-                  {...register('assignedUserId')}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
-                >
-                  <option value="">Unassigned</option>
-                  {users?.map((u) => (
-                    <option key={u.uid || u.id} value={u.uid || u.id}>
-                      {u.displayName}
-                    </option>
-                  ))}
-                </select>
+
+              <Field label="Looking For" icon={StickyNote}>
+                <textarea
+                  {...register('lookingFor')}
+                  rows={2}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
+                  placeholder="Products or services requested…"
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Stage</label>
+                  <select
+                    {...register('stageId')}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
+                  >
+                    {stages?.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Assigned To</label>
+                  <select
+                    {...register('assignedUserId')}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
+                  >
+                    <option value="">Unassigned</option>
+                    {users?.map((u) => (
+                      <option key={u.uid || u.id} value={u.uid || u.id}>{u.displayName}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              <Field label="Notes" icon={StickyNote}>
+                <textarea
+                  {...register('notes')}
+                  rows={3}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
+                  placeholder="Additional notes…"
+                />
+              </Field>
             </div>
-
-            {/* Next Follow-up */}
-            <Field label="Next Follow-up" icon={Calendar}>
-              <input
-                {...register('nextFollowUp')}
-                type="date"
-                className={inputCls(true)}
-              />
-            </Field>
-
-            {/* Notes */}
-            <Field label="Notes" icon={StickyNote}>
-              <textarea
-                {...register('notes')}
-                rows={3}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
-                placeholder="Add notes here…"
-              />
-            </Field>
           </div>
 
           {/* Footer */}

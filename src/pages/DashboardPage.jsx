@@ -1,6 +1,6 @@
 // DashboardPage — main Kanban CRM view
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, RefreshCw, Filter } from 'lucide-react';
+import { Plus, RefreshCw, Filter, Download } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getStages } from '../services/stagesService';
@@ -53,6 +53,41 @@ const DashboardPage = () => {
     setShowLeadModal(true);
   };
 
+  const handleExport = () => {
+    const headers = [
+      'Opportunity Title', 'Customer Name', 'Company', 'Phone', 'Email', 
+      'Location', 'Source', 'Expected Revenue', 'Priority', 'Stage', 'Created At'
+    ];
+    
+    const rows = leads.map(l => {
+      const stageName = stages.find(s => s.id === l.stageId)?.name || '';
+      const date = l.createdAt?.toDate?.() ? l.createdAt.toDate() : (l.createdAt ? new Date(l.createdAt) : null);
+      const formattedDate = date ? date.toLocaleDateString() : '';
+      return [
+        `"${(l.opportunityTitle || '').replace(/"/g, '""')}"`,
+        `"${(l.customerName || '').replace(/"/g, '""')}"`,
+        `"${(l.company || '').replace(/"/g, '""')}"`,
+        `"${(l.phone || '').replace(/"/g, '""')}"`,
+        `"${(l.email || '').replace(/"/g, '""')}"`,
+        `"${(l.address || '').replace(/"/g, '""')}"`,
+        `"${(l.source || '').replace(/"/g, '""')}"`,
+        l.expectedRevenue || 0,
+        l.priority || 0,
+        `"${stageName}"`,
+        `"${formattedDate}"`
+      ].join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads_${activeStore.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  };
+
   if (!activeStore) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
@@ -93,6 +128,17 @@ const DashboardPage = () => {
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          {/* Export */}
+          <button
+            onClick={handleExport}
+            disabled={loading || leads.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 font-medium rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
+            title="Export to CSV"
+          >
+            <Download size={15} />
+            Export
           </button>
 
           {/* New Lead */}

@@ -209,10 +209,11 @@ const QuotationModal = ({ lead, storeId, onClose, onSaved }) => {
                         className={inputCls}
                         placeholder="Product name"
                       />
-                      <input
+                      <textarea
                         {...register(`items.${idx}.description`)}
-                        className={inputCls}
+                        className={`${inputCls} resize-y min-h-[36px] py-2`}
                         placeholder="Description (optional)"
+                        rows={1}
                       />
                     </div>
                     <div className="col-span-2">
