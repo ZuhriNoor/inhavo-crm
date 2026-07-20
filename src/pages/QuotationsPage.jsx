@@ -122,26 +122,28 @@ const QuotationsPage = () => {
               <div
                 key={q.id}
                 onClick={() => setViewingQuote(q)}
-                className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
               >
-                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                  <FileText size={18} className="text-purple-500" />
+                <div className="flex items-center gap-4 w-full sm:w-auto flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                    <FileText size={18} className="text-purple-500" />
+                  </div>
+  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">
+                      {q.customerDetails?.name || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
+                    </p>
+                  </div>
+  
+                  <div className="text-sm font-bold text-gray-800 whitespace-nowrap px-2">
+                    ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">
-                    {q.customerDetails?.name || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
-                  </p>
-                </div>
-
-                <div className="text-sm font-bold text-gray-800">
-                  ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
-                </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

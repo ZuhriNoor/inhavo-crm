@@ -26,10 +26,11 @@ const ADMIN_ITEMS = [
   { to: '/admin/pipeline', label: 'Pipeline', icon: GitBranch },
 ];
 
-const NavItem = ({ to, label, icon: Icon, exact }) => (
+const NavItem = ({ to, label, icon: Icon, exact, onClick }) => (
   <NavLink
     to={to}
     end={exact}
+    onClick={onClick}
     className={({ isActive }) =>
       `sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 text-sm font-medium transition-all ${
         isActive
@@ -43,7 +44,7 @@ const NavItem = ({ to, label, icon: Icon, exact }) => (
   </NavLink>
 );
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { profile, isAdmin, signOut } = useAuth();
   const { availableStores, activeStore, setActiveStore } = useStore();
   const [storeOpen, setStoreOpen] = useState(false);
@@ -52,6 +53,7 @@ const Sidebar = () => {
   const handleStoreSelect = (store) => {
     setActiveStore(store);
     setStoreOpen(false);
+    if (onClose) onClose();
   };
 
   const handleSignOut = async () => {
@@ -61,7 +63,9 @@ const Sidebar = () => {
 
   return (
     <aside
-      className="flex flex-col shrink-0 overflow-hidden"
+      className={`flex flex-col shrink-0 overflow-hidden fixed inset-y-0 left-0 z-50 md:relative transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}
       style={{
         width: 220,
         background: 'linear-gradient(180deg, #2c3e50 0%, #1a252f 100%)',
@@ -110,24 +114,27 @@ const Sidebar = () => {
       {/* Divider */}
       <div className="mx-4 my-1 border-t border-white/10" />
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 space-y-0.5">
-        {NAV_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} />
-        ))}
+        {/* Primary Links */}
+        <nav className="flex-1 overflow-y-auto py-2 space-y-0.5">
+        <div className="space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.to} {...item} onClick={onClose} />
+          ))}
+        </div>
 
+        {/* Admin Links */}
         {isAdmin && (
-          <>
-            <div className="mx-4 my-2 border-t border-white/10" />
-            <p className="px-6 pt-1 pb-1 text-xs font-semibold uppercase tracking-widest text-white/30">
+          <div className="mt-6">
+            <h4 className="px-5 mb-2 text-[11px] font-bold tracking-wider text-white/40 uppercase">
               Admin
-            </p>
-            {ADMIN_ITEMS.map((item) => (
-              <NavItem key={item.to} {...item} />
-            ))}
-          </>
-        )}
-      </nav>
+            </h4>
+            <div className="space-y-1">
+              {ADMIN_ITEMS.map((item) => (
+                <NavItem key={item.to} {...item} onClick={onClose} />
+              ))}
+            </div>
+          </div>
+        )}</nav>
 
       {/* User footer */}
       <div className="border-t border-white/10 px-4 py-3">

@@ -1,5 +1,5 @@
 // Topbar — search + notification bell + breadcrumb
-import { Bell, Search, X, Check, Trash2 } from 'lucide-react';
+import { Bell, Search, X, Check, Trash2, Menu } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDistanceToNow } from '../../utils/helpers';
@@ -20,7 +20,7 @@ const NOTIF_ICONS = {
   task_overdue: '🔴',
 };
 
-const Topbar = () => {
+const Topbar = ({ onMenuClick }) => {
   const { notifications, unreadCount, readOne, readAll, remove } = useNotifications();
   const [notifOpen, setNotifOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -41,7 +41,15 @@ const Topbar = () => {
   }, []);
 
   return (
-    <header className="flex items-center h-14 px-6 bg-white border-b border-gray-200 shrink-0 gap-4">
+    <header className="flex items-center h-14 px-4 sm:px-6 bg-white border-b border-gray-200 shrink-0 gap-3 sm:gap-4">
+      {/* Mobile Menu Toggle */}
+      <button 
+        onClick={onMenuClick}
+        className="md:hidden p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <Menu size={20} />
+      </button>
+
       {/* Breadcrumb */}
       <div className="flex-1">
         <p className="text-sm font-semibold text-gray-700">{breadcrumb}</p>
