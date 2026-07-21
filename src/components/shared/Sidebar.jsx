@@ -9,6 +9,7 @@ import {
   GitBranch,
   ChevronDown,
   Building2,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStore } from '../../contexts/StoreContext';
@@ -16,12 +17,13 @@ import { useState } from 'react';
 
 const NAV_ITEMS = [
   { to: '/', label: 'CRM', icon: LayoutDashboard, exact: true },
+  { to: '/leads', label: 'Leads', icon: Users },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/quotations', label: 'Quotations', icon: FileText },
 ];
 
 const ADMIN_ITEMS = [
-  { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/users', label: 'Users', icon: Shield },
   { to: '/admin/stores', label: 'Stores', icon: Store },
   { to: '/admin/pipeline', label: 'Pipeline', icon: GitBranch },
 ];

@@ -18,7 +18,7 @@ import { db } from './firebase';
 const LEADS_COL = 'leads';
 
 /** Fetch all leads for given store IDs */
-export const getLeads = async (storeIds) => {
+export const getLeads = async (storeIds, includeDeleted = false) => {
   if (!storeIds || storeIds.length === 0) return [];
   const q = query(
     collection(db, LEADS_COL),
@@ -26,7 +26,8 @@ export const getLeads = async (storeIds) => {
     orderBy('createdAt', 'desc'),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const leads = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return includeDeleted ? leads : leads.filter((l) => !l.deleted);
 };
 
 /** Fetch a single lead by ID */
@@ -78,7 +79,18 @@ export const moveLeadToStage = async (leadId, stageId) => {
   });
 };
 
-/** Delete a lead */
+/** Soft delete a lead */
 export const deleteLead = async (id) => {
-  await deleteDoc(doc(db, LEADS_COL, id));
+  await updateDoc(doc(db, LEADS_COL, id), {
+    deleted: true,
+    deletedAt: serverTimestamp(),
+  });
+};
+
+/** Restore a soft-deleted lead */
+export const restoreLead = async (id) => {
+  await updateDoc(doc(db, LEADS_COL, id), {
+    deleted: false,
+    updatedAt: serverTimestamp(),
+  });
 };

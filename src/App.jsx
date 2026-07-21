@@ -10,6 +10,7 @@ import AppLayout from './components/shared/AppLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import LeadsPage from './pages/LeadsPage';
 import LeadDetailPage from './pages/LeadDetailPage';
 import TasksPage from './pages/TasksPage';
 import QuotationsPage from './pages/QuotationsPage';
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: 'leads', element: <LeadsPage /> },
       { path: 'leads/:leadId', element: <LeadDetailPage /> },
       { path: 'tasks', element: <TasksPage /> },
       { path: 'quotations', element: <QuotationsPage /> },

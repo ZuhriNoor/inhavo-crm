@@ -100,10 +100,10 @@ const KanbanCard = ({ lead, users }) => {
         {lead.customerName || 'No Customer'}
       </p>
 
-      <div className="space-y-1 mb-2">
+      <div className="flex items-center gap-3 mb-2">
         {/* Place */}
         {lead.address && (
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
+          <div className="flex items-center gap-1 text-[11px] text-gray-500 flex-1 min-w-0">
             <MapPin size={11} className="shrink-0 text-gray-400" />
             <span className="truncate">{lead.address}</span>
           </div>
@@ -111,7 +111,7 @@ const KanbanCard = ({ lead, users }) => {
 
         {/* Phone */}
         {lead.phone && (
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
+          <div className="flex items-center gap-1 text-[11px] text-gray-500 shrink-0">
             <Phone size={11} className="shrink-0 text-gray-400" />
             <span className="truncate">{lead.phone}</span>
           </div>

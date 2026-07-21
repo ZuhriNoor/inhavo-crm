@@ -4,9 +4,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Trash2, Phone, Mail, MapPin, Building2,
   Calendar, User, StickyNote, Plus, CheckSquare, FileText, Tag,
-  Globe, IndianRupee, Target, Star, Briefcase
+  Globe, IndianRupee, Target, Star, Briefcase, RefreshCcw, Archive
 } from 'lucide-react';
-import { getLead, deleteLead } from '../services/leadsService';
+import { getLead, deleteLead, restoreLead } from '../services/leadsService';
 import { getTasksByLead } from '../services/tasksService';
 import { getQuotationsByLead } from '../services/quotationsService';
 import { getStages } from '../services/stagesService';
@@ -116,7 +116,13 @@ const LeadDetailPage = () => {
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this lead?')) return;
     await deleteLead(leadId);
-    navigate('/');
+    loadData();
+  };
+
+  const handleRestore = async () => {
+    if (!confirm('Are you sure you want to restore this lead?')) return;
+    await restoreLead(leadId);
+    loadData();
   };
 
   const assignedUser = users.find((u) => u.uid === lead?.assignedUserId);
@@ -162,6 +168,11 @@ const LeadDetailPage = () => {
             <h1 className="text-base font-semibold text-gray-800 truncate">
               {lead.opportunityTitle || lead.customerName}
             </h1>
+            {lead.deleted && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                <Archive size={12} /> Deleted
+              </span>
+            )}
             {lead.priority > 0 && (
               <div className="flex items-center text-yellow-400">
                 {Array.from({ length: lead.priority }).map((_, i) => (
@@ -185,18 +196,29 @@ const LeadDetailPage = () => {
         )}
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
-          >
-            <Edit2 size={14} /> Edit
-          </button>
-          <button
-            onClick={handleDelete}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
-          >
-            <Trash2 size={14} /> Delete
-          </button>
+          {lead.deleted ? (
+            <button
+              onClick={handleRestore}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all border border-green-200"
+            >
+              <RefreshCcw size={14} /> Restore
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <Edit2 size={14} /> Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
 
