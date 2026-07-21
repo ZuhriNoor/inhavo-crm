@@ -9,10 +9,10 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Field = ({ label, icon: Icon, error, children }) => (
   <div>
-    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">{label}</label>
     <div className="relative">
       {Icon && (
-        <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
       )}
       {children}
     </div>
@@ -21,7 +21,7 @@ const Field = ({ label, icon: Icon, error, children }) => (
 );
 
 const inputCls = (hasIcon) =>
-  `w-full py-2 pr-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all ${
+  `w-full py-2 pr-3 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 dark:focus:border-purple-400 transition-all ${
     hasIcon ? 'pl-9' : 'pl-3'
   }`;
 
@@ -113,15 +113,15 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Lead' : 'New Lead'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all"
           >
             <X size={18} />
           </button>
@@ -133,7 +133,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
             
             {/* LEFT COLUMN */}
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Core Information</h3>
+              <h3 className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-2">Core Information</h3>
               
               <Field label="Opportunity Title *" icon={Briefcase} error={errors.opportunityTitle?.message}>
                 <input
@@ -188,7 +188,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
             {/* RIGHT COLUMN */}
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sales Details</h3>
+                <h3 className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Sales Details</h3>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3].map((star) => (
                     <button
@@ -196,7 +196,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                       type="button"
                       onClick={() => setValue('priority', currentPriority === star ? 0 : star)}
                       className={`transition-colors ${
-                        star <= currentPriority ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-200'
+                        star <= currentPriority ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-200 dark:text-slate-600 hover:text-yellow-200'
                       }`}
                     >
                       <Star size={16} fill={star <= currentPriority ? "currentColor" : "none"} />
@@ -225,17 +225,17 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 <textarea
                   {...register('lookingFor')}
                   rows={2}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
                   placeholder="Products or services requested…"
                 />
               </Field>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Stage</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Stage</label>
                   <select
                     {...register('stageId')}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
+                    className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
                   >
                     {stages?.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
@@ -243,10 +243,10 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Assigned To</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Assigned To</label>
                   <select
                     {...register('assignedUserId')}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
+                    className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
                   >
                     <option value="">Unassigned</option>
                     {users?.map((u) => (
@@ -260,7 +260,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 <textarea
                   {...register('notes')}
                   rows={3}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none"
                   placeholder="Additional notes…"
                 />
               </Field>
@@ -268,11 +268,11 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+              className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
             >
               Cancel
             </button>

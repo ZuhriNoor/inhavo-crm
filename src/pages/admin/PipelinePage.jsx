@@ -31,7 +31,7 @@ const STAGE_COLORS = [
 ];
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400';
+  'w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400';
 
 const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
   const isEditing = !!editStage;
@@ -59,18 +59,18 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Stage' : 'New Stage'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700">
             <X size={18} />
           </button>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Stage Name *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Stage Name *</label>
             <input
               {...register('name', { required: 'Name is required' })}
               className={inputCls}
@@ -79,14 +79,14 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
             {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name.message}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-2">Color</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-2">Color</label>
             <div className="flex flex-wrap gap-2">
               {STAGE_COLORS.map((color) => (
                 <label key={color} className="cursor-pointer">
                   <input type="radio" value={color} {...register('color')} className="sr-only" />
                   <div
                     className={`w-7 h-7 rounded-full transition-transform ${
-                      selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : ''
+                      selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-slate-500 scale-110' : ''
                     }`}
                     style={{ background: color }}
                   />
@@ -95,7 +95,7 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">Cancel</button>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -125,26 +125,26 @@ const SortableStageRow = ({ stage, onEdit, onDelete }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3.5 bg-white rounded-xl border border-gray-200 hover:shadow-sm transition-all"
+      className="flex items-center gap-3 p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all"
     >
-      <button {...attributes} {...listeners} className="p-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing">
+      <button {...attributes} {...listeners} className="p-1 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing">
         <GripVertical size={16} />
       </button>
       <div
         className="w-3 h-3 rounded-full shrink-0"
         style={{ background: stage.color || '#875a7b' }}
       />
-      <span className="flex-1 text-sm font-medium text-gray-800">{stage.name}</span>
-      <span className="text-xs text-gray-400">Order {stage.order + 1}</span>
+      <span className="flex-1 text-sm font-medium text-gray-800 dark:text-slate-100">{stage.name}</span>
+      <span className="text-xs text-gray-400 dark:text-slate-400">Order {stage.order + 1}</span>
       <button
         onClick={() => onEdit(stage)}
-        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+        className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
       >
         <Edit2 size={13} />
       </button>
       <button
         onClick={() => onDelete(stage)}
-        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+        className="p-1.5 text-red-400 dark:text-rose-400 hover:text-red-600 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg"
       >
         <Trash2 size={13} />
       </button>
@@ -198,21 +198,21 @@ const PipelinePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       <div className="flex items-center justify-between px-6 py-4 shrink-0">
         <div className="flex items-center gap-3">
-          <p className="text-sm text-gray-500">{stages.length} stage(s)</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{stages.length} stage(s)</p>
           {stages.length === 0 && (
             <button
               onClick={handleSeedDefaults}
-              className="text-xs text-purple-600 hover:text-purple-800 underline"
+              className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
             >
               Create default stages
             </button>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">
+          <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
@@ -226,13 +226,13 @@ const PipelinePage = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <p className="text-xs text-gray-400 mb-3">
+        <p className="text-xs text-gray-400 dark:text-slate-400 mb-3">
           Drag stages to reorder them. The order here is the order shown on the Kanban board.
         </p>
         {loading ? (
           <div className="space-y-2">{[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-12 rounded-xl" />)}</div>
         ) : stages.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">No stages yet.</div>
+          <div className="text-center py-16 text-gray-400 dark:text-slate-500 text-sm">No stages yet.</div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={stages.map((s) => s.id)} strategy={verticalListSortingStrategy}>

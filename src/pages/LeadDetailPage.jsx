@@ -25,19 +25,19 @@ const InfoRow = ({ icon: Icon, label, value }) => {
   if (!value) return null;
   return (
     <div className="flex items-start gap-3 py-2">
-      <Icon size={16} className="text-gray-400 mt-0.5 shrink-0" />
+      <Icon size={16} className="text-gray-400 dark:text-slate-500 mt-0.5 shrink-0" />
       <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm text-gray-800 font-medium">{value}</p>
+        <p className="text-xs text-gray-400 dark:text-slate-400">{label}</p>
+        <p className="text-sm text-gray-800 dark:text-slate-100 font-medium">{value}</p>
       </div>
     </div>
   );
 };
 
 const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  'in-progress': 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
+  pending: 'bg-yellow-100 dark:bg-amber-950/60 text-yellow-700 dark:text-amber-300',
+  'in-progress': 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300',
+  completed: 'bg-green-100 dark:bg-emerald-950/60 text-green-700 dark:text-emerald-300',
 };
 
 const LeadDetailPage = () => {
@@ -115,14 +115,21 @@ const LeadDetailPage = () => {
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this lead?')) return;
-    await deleteLead(leadId);
-    loadData();
+    try {
+      await deleteLead(leadId);
+      navigate('/');
+    } catch (err) {
+      console.error('Failed to delete lead:', err);
+    }
   };
 
   const handleRestore = async () => {
-    if (!confirm('Are you sure you want to restore this lead?')) return;
-    await restoreLead(leadId);
-    loadData();
+    try {
+      await restoreLead(leadId);
+      loadData();
+    } catch (err) {
+      console.error('Failed to restore lead:', err);
+    }
   };
 
   const assignedUser = users.find((u) => u.uid === lead?.assignedUserId);
@@ -131,45 +138,43 @@ const LeadDetailPage = () => {
   if (loading) {
     return (
       <div className="p-6 space-y-4">
-        <div className="skeleton h-8 w-48 rounded" />
-        <div className="skeleton h-48 w-full rounded-xl" />
+        <div className="skeleton h-10 w-64 rounded-lg" />
+        <div className="skeleton h-64 rounded-xl" />
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
-        <p>Lead not found.</p>
-        <Link to="/" className="text-purple-600 text-sm hover:underline">
-          ← Back to board
-        </Link>
+      <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
+        <p className="text-base font-medium">Lead not found</p>
+        <Link to="/" className="text-sm text-purple-600 underline">Back to Kanban</Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+      <div className="flex items-center gap-4 px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
         <button
           onClick={() => navigate('/')}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+          className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all"
         >
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
           {lead.leadNumber && (
-            <div className="text-[11px] font-bold text-purple-600 mb-0.5 tracking-wider">
+            <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 mb-0.5 tracking-wider">
               {lead.leadNumber}
             </div>
           )}
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold text-gray-800 truncate">
+            <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100 truncate">
               {lead.opportunityTitle || lead.customerName}
             </h1>
             {lead.deleted && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-red-100 dark:border-rose-900/60">
                 <Archive size={12} /> Deleted
               </span>
             )}
@@ -181,7 +186,7 @@ const LeadDetailPage = () => {
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-slate-400">
             {lead.customerName}{lead.company ? ` · ${lead.company}` : ''}
           </p>
         </div>
@@ -199,7 +204,7 @@ const LeadDetailPage = () => {
           {lead.deleted ? (
             <button
               onClick={handleRestore}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all border border-green-200"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-600 dark:text-emerald-400 hover:text-green-700 dark:hover:text-emerald-300 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all border border-green-200 dark:border-emerald-800"
             >
               <RefreshCcw size={14} /> Restore
             </button>
@@ -207,13 +212,13 @@ const LeadDetailPage = () => {
             <>
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
               >
                 <Edit2 size={14} /> Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg transition-all"
               >
                 <Trash2 size={14} /> Delete
               </button>
@@ -225,8 +230,8 @@ const LeadDetailPage = () => {
       {/* Body */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Lead info */}
-        <div className="w-72 shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-5 space-y-1">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+        <div className="w-72 shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 overflow-y-auto p-5 space-y-1 transition-colors">
+          <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">
             Sales Details
           </h3>
           <InfoRow icon={IndianRupee} label="Expected Revenue" value={lead.expectedRevenue ? `₹${lead.expectedRevenue.toLocaleString('en-IN')}` : null} />
@@ -242,7 +247,7 @@ const LeadDetailPage = () => {
             value={assignedUser?.displayName || 'Unassigned'}
           />
 
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 mt-6 pt-6 border-t border-gray-100">
+          <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
             Contact Information
           </h3>
           <InfoRow icon={User} label="Customer" value={lead.customerName} />
@@ -252,8 +257,8 @@ const LeadDetailPage = () => {
           <InfoRow icon={MapPin} label="Location" value={lead.address} />
 
           {(lead.lookingFor || lead.notes || lead.nextFollowUp) && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">
                 Additional Details
               </h3>
               <InfoRow
@@ -263,14 +268,14 @@ const LeadDetailPage = () => {
               />
               {lead.lookingFor && (
                 <div className="py-2">
-                  <p className="text-xs text-gray-400 mb-1">Looking For (Products)</p>
-                  <p className="text-sm text-gray-800 font-medium whitespace-pre-wrap">{lead.lookingFor}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-400 mb-1">Looking For (Products)</p>
+                  <p className="text-sm text-gray-800 dark:text-slate-100 font-medium whitespace-pre-wrap">{lead.lookingFor}</p>
                 </div>
               )}
               {lead.notes && (
                 <div className="py-2 mt-2">
-                  <p className="text-xs text-gray-400 mb-1">Notes</p>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{lead.notes}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-400 mb-1">Notes</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{lead.notes}</p>
                 </div>
               )}
             </div>
@@ -280,7 +285,7 @@ const LeadDetailPage = () => {
         {/* Right: Tasks & Quotations */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-6 pt-4 pb-0 bg-gray-50 border-b border-gray-200 shrink-0">
+          <div className="flex items-center gap-1 px-6 pt-4 pb-0 bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
             {[
               { id: 'tasks', label: 'Tasks', icon: CheckSquare, count: tasks.length },
               { id: 'quotations', label: 'Quotations', icon: FileText, count: quotations.length },
@@ -290,14 +295,14 @@ const LeadDetailPage = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
                   activeTab === tab.id
-                    ? 'border-purple-600 text-purple-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-purple-600 text-purple-700 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                 }`}
               >
                 <tab.icon size={14} />
                 {tab.label}
                 <span className={`text-xs rounded-full px-1.5 ${
-                  activeTab === tab.id ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'
+                  activeTab === tab.id ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
                 }`}>
                   {tab.count}
                 </span>
@@ -311,7 +316,7 @@ const LeadDetailPage = () => {
             {activeTab === 'tasks' && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-700">Tasks</h3>
+                  <h3 className="font-semibold text-gray-700 dark:text-slate-200">Tasks</h3>
                   <button
                     onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg"
@@ -321,7 +326,7 @@ const LeadDetailPage = () => {
                   </button>
                 </div>
                 {tasks.length === 0 ? (
-                  <div className="text-center py-10 text-gray-400 text-sm">
+                  <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
                     No tasks yet. Add one above.
                   </div>
                 ) : (
@@ -329,20 +334,20 @@ const LeadDetailPage = () => {
                     {tasks.map((task) => (
                       <div
                         key={task.id}
-                        className={`flex items-start gap-3 p-3 bg-white rounded-xl border transition-all ${
-                          isOverdue(task) ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
+                        className={`flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border transition-all ${
+                          isOverdue(task) ? 'border-red-200 dark:border-rose-900/60 bg-red-50/30 dark:bg-rose-950/10' : 'border-gray-200 dark:border-slate-700'
                         }`}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                          <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-100'}`}>
                             {task.title}
                           </p>
                           {task.description && (
-                            <p className="text-xs text-gray-400 mt-0.5">{task.description}</p>
+                            <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">{task.description}</p>
                           )}
                           <div className="flex items-center gap-3 mt-1.5">
                             {task.deadline && (
-                              <span className={`text-xs ${isOverdue(task) ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                              <span className={`text-xs ${isOverdue(task) ? 'text-red-500 dark:text-rose-400 font-medium' : 'text-gray-400 dark:text-slate-400'}`}>
                                 📅 {formatDate(task.deadline?.toDate?.() || task.deadline)}
                                 {isOverdue(task) && ' · Overdue'}
                               </span>
@@ -354,7 +359,7 @@ const LeadDetailPage = () => {
                         </span>
                         <button
                           onClick={() => { setEditingTask(task); setShowTaskModal(true); }}
-                          className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                          className="p-1 rounded text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                         >
                           <Edit2 size={13} />
                         </button>
@@ -369,7 +374,7 @@ const LeadDetailPage = () => {
             {activeTab === 'quotations' && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-700">Quotations</h3>
+                  <h3 className="font-semibold text-gray-700 dark:text-slate-200">Quotations</h3>
                   <button
                     onClick={() => {
                       setEditingQuotation(null);
@@ -382,7 +387,7 @@ const LeadDetailPage = () => {
                   </button>
                 </div>
                 {quotations.length === 0 ? (
-                  <div className="text-center py-10 text-gray-400 text-sm">
+                  <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
                     No quotations yet. Generate one above.
                   </div>
                 ) : (
@@ -391,14 +396,14 @@ const LeadDetailPage = () => {
                       <div
                         key={q.id}
                         onClick={() => setViewingQuotation(q)}
-                        className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
+                        className="flex items-center gap-4 p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm hover:border-purple-200 dark:hover:border-purple-500 cursor-pointer transition-all"
                       >
                         <FileText size={18} className="text-purple-400 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800">
+                          <p className="text-sm font-medium text-gray-800 dark:text-slate-100">
                             {q.customerDetails?.name || lead?.customerName || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 dark:text-slate-400">
                             {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
                             {' · '}
                             ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
@@ -411,7 +416,7 @@ const LeadDetailPage = () => {
                               setEditingQuotation(q);
                               setShowQuotationModal(true);
                             }}
-                            className="p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all border border-transparent"
+                            className="p-1.5 rounded text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all border border-transparent"
                             title="Edit"
                           >
                             <Edit2 size={13} />
@@ -422,10 +427,10 @@ const LeadDetailPage = () => {
                               handleDownload(q);
                             }}
                             disabled={downloadingId === q.id}
-                            className="px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
+                            className="px-3 py-1.5 text-xs text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all disabled:opacity-50"
                           >
                             {downloadingId === q.id ? (
-                              <span className="spinner w-3 h-3 border-purple-600" />
+                              <span className="spinner w-3 h-3 border-purple-600 dark:border-purple-400" />
                             ) : (
                               'Download PDF'
                             )}

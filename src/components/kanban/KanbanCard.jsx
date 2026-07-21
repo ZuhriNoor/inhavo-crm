@@ -65,17 +65,17 @@ const KanbanCard = ({ lead, users }) => {
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className="kanban-card bg-white rounded-lg border border-gray-200 p-3.5 mb-2 select-none hover:border-purple-300 transition-colors"
+      className="kanban-card bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3.5 mb-2 select-none hover:border-purple-300 dark:hover:border-purple-500 transition-colors shadow-xs"
     >
       {/* Top Row: Opportunity Title & Priority */}
       <div className="flex items-start justify-between mb-1.5 gap-2">
         <div className="flex flex-col min-w-0 flex-1">
           {lead.leadNumber && (
-            <span className="text-[10px] font-bold text-purple-600 mb-0.5 tracking-wider">
+            <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-0.5 tracking-wider">
               {lead.leadNumber}
             </span>
           )}
-          <p className="font-bold text-gray-900 text-sm leading-tight truncate">
+          <p className="font-bold text-gray-900 dark:text-slate-100 text-sm leading-tight truncate">
             {lead.opportunityTitle || 'Unnamed Opportunity'}
           </p>
         </div>
@@ -86,7 +86,7 @@ const KanbanCard = ({ lead, users }) => {
               type="button"
               onClick={(e) => handlePriorityClick(e, star)}
               className={`transition-colors p-0.5 ${
-                star <= localPriority ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-200 hover:text-yellow-200'
+                star <= localPriority ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-200 dark:text-slate-600 hover:text-yellow-200'
               }`}
             >
               <Star size={13} fill={star <= localPriority ? "currentColor" : "none"} />
@@ -96,35 +96,35 @@ const KanbanCard = ({ lead, users }) => {
       </div>
 
       {/* Customer Name */}
-      <p className="text-xs text-gray-700 font-medium mb-2 truncate">
+      <p className="text-xs text-gray-700 dark:text-slate-300 font-medium mb-2 truncate">
         {lead.customerName || 'No Customer'}
       </p>
 
       <div className="flex items-center gap-3 mb-2">
         {/* Place */}
         {lead.address && (
-          <div className="flex items-center gap-1 text-[11px] text-gray-500 flex-1 min-w-0">
-            <MapPin size={11} className="shrink-0 text-gray-400" />
+          <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400 flex-1 min-w-0">
+            <MapPin size={11} className="shrink-0 text-gray-400 dark:text-slate-500" />
             <span className="truncate">{lead.address}</span>
           </div>
         )}
 
         {/* Phone */}
         {lead.phone && (
-          <div className="flex items-center gap-1 text-[11px] text-gray-500 shrink-0">
-            <Phone size={11} className="shrink-0 text-gray-400" />
+          <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400 shrink-0">
+            <Phone size={11} className="shrink-0 text-gray-400 dark:text-slate-500" />
             <span className="truncate">{lead.phone}</span>
           </div>
         )}
       </div>
 
       {/* Footer: Revenue & Avatar */}
-      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-        <div className="flex items-center gap-1 text-xs font-semibold text-gray-800">
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+        <div className="flex items-center gap-1 text-xs font-semibold text-gray-800 dark:text-slate-200">
           {lead.expectedRevenue ? `₹${lead.expectedRevenue.toLocaleString('en-IN')}` : ''}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-gray-400 truncate max-w-[60px]">{assignedName}</span>
+          <span className="text-[10px] text-gray-400 dark:text-slate-400 truncate max-w-[60px]">{assignedName}</span>
           <div
             className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 shadow-sm"
             style={{ background: avatarColor }}

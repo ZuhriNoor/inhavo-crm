@@ -104,13 +104,13 @@ const DashboardPage = () => {
 
   if (!activeStore) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-          <Filter size={28} className="text-gray-300" />
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-slate-400 gap-4">
+        <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+          <Filter size={28} className="text-gray-300 dark:text-slate-600" />
         </div>
         <div className="text-center">
-          <p className="font-semibold text-gray-700 mb-1">No store selected</p>
-          <p className="text-sm text-gray-400">
+          <p className="font-semibold text-gray-700 dark:text-slate-200 mb-1">No store selected</p>
+          <p className="text-sm text-gray-400 dark:text-slate-400">
             {isAdmin
               ? 'Create a store in the Admin panel to get started.'
               : 'You have not been assigned to any store yet.'}
@@ -123,12 +123,12 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Board header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-gray-800">
+          <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100">
             {activeStore.name}
           </h1>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-gray-400 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
             {leads.length} lead{leads.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -138,7 +138,7 @@ const DashboardPage = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all disabled:opacity-40"
+            className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all disabled:opacity-40"
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -148,10 +148,10 @@ const DashboardPage = () => {
           <button
             onClick={handleExport}
             disabled={loading || isExporting || leads.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 font-medium rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50"
             title="Export to CSV"
           >
-            {isExporting ? <span className="spinner w-3.5 h-3.5 border-gray-500" /> : <Download size={15} />}
+            {isExporting ? <span className="spinner w-3.5 h-3.5 border-gray-500 dark:border-slate-400" /> : <Download size={15} />}
             Export
           </button>
 
@@ -169,7 +169,7 @@ const DashboardPage = () => {
 
       {/* Error banner */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-6 py-2 text-sm text-red-600 shrink-0">
+        <div className="bg-red-50 dark:bg-rose-950/40 border-b border-red-200 dark:border-rose-900/60 px-6 py-2 text-sm text-red-600 dark:text-rose-300 shrink-0">
           {error}
         </div>
       )}
@@ -190,7 +190,7 @@ const DashboardPage = () => {
         /* Kanban Board */
         <div className="flex-1 overflow-hidden">
           {stages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-400 gap-2">
               <p className="font-medium">No pipeline stages yet.</p>
               {isAdmin && (
                 <p className="text-sm">

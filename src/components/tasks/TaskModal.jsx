@@ -11,7 +11,7 @@ import { toInputDate, fromInputDate, isDueSoon, isOverdue } from '../../utils/he
 import { useAuth } from '../../contexts/AuthContext';
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all';
+  'w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all';
 
 const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
   const { user } = useAuth();
@@ -93,15 +93,15 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Task' : 'New Task'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all"
           >
             <X size={18} />
           </button>
@@ -111,7 +111,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Title *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Title *</label>
             <input
               {...register('title', { required: 'Title is required' })}
               className={inputCls}
@@ -124,7 +124,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Description</label>
             <textarea
               {...register('description')}
               rows={2}
@@ -136,7 +136,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
           {/* Assigned To + Deadline */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Assigned To</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Assigned To</label>
               <select {...register('assignedUserId')} className={inputCls}>
                 <option value="">Unassigned</option>
                 {users?.map((u) => (
@@ -147,14 +147,14 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Deadline</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Deadline</label>
               <input {...register('deadline')} type="date" className={inputCls} />
             </div>
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Status</label>
             <select {...register('status')} className={inputCls}>
               <option value="pending">Pending</option>
               <option value="in-progress">In Progress</option>
@@ -169,7 +169,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
                 <button
                   type="button"
                   onClick={handleComplete}
-                  className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg border border-green-200 transition-all"
+                  className="px-3 py-1.5 text-sm text-green-600 dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg border border-green-200 dark:border-emerald-800 transition-all"
                 >
                   ✓ Complete
                 </button>
@@ -178,7 +178,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg border border-red-200 transition-all"
+                  className="px-3 py-1.5 text-sm text-red-500 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg border border-red-200 dark:border-rose-800 transition-all"
                 >
                   Delete
                 </button>
@@ -188,7 +188,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
               >
                 Cancel
               </button>

@@ -73,7 +73,7 @@ const LoginPage = () => {
 
         {/* Right login form */}
         <div className="w-full max-w-md shrink-0">
-          <div className="bg-white rounded-2xl shadow-2xl p-10">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-transparent dark:border-slate-700 p-10 transition-colors">
             {/* Mobile logo */}
             <div className="lg:hidden flex items-center gap-3 mb-8">
               <div
@@ -82,28 +82,28 @@ const LoginPage = () => {
               >
                 I
               </div>
-              <span className="font-bold text-xl text-gray-800">Inhavo CRM</span>
+              <span className="font-bold text-xl text-gray-800 dark:text-slate-100">Inhavo CRM</span>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-            <p className="text-gray-500 text-sm mb-8">Sign in to your account</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-1">Welcome back</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-sm mb-8">Sign in to your account</p>
 
             {/* Error alert */}
             {error && (
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6">
-                <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="flex items-start gap-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/60 rounded-lg px-4 py-3 mb-6">
+                <AlertCircle size={16} className="text-red-500 dark:text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-red-700 dark:text-rose-300 text-sm">{error}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
                   Email address
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                   <input
                     type="email"
                     autoComplete="email"
@@ -112,39 +112,39 @@ const LoginPage = () => {
                       required: 'Email is required',
                       pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
                     })}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-rose-400">{errors.email.message}</p>
                 )}
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                   <input
                     type={showPwd ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="••••••••"
                     {...register('password', { required: 'Password is required' })}
-                    className="w-full pl-10 pr-11 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all"
+                    className="w-full pl-10 pr-11 py-2.5 bg-white dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPwd((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
                     tabIndex={-1}
                   >
                     {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-rose-400">{errors.password.message}</p>
                 )}
               </div>
 
@@ -166,7 +166,7 @@ const LoginPage = () => {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-xs text-gray-400">
+            <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-400">
               Contact your administrator to request an account.
             </p>
           </div>

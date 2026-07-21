@@ -1,6 +1,7 @@
 // App.jsx — Root app with React Router v8 and context providers
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { StoreProvider } from './contexts/StoreContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 
@@ -88,12 +89,14 @@ const router = createBrowserRouter([
   },
 ]);
 
-// Root app with auth provider
+// Root app with auth and theme providers
 function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

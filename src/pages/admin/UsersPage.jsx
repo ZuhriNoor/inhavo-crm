@@ -12,7 +12,7 @@ import { getInitials, stringToColor } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400';
+  'w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400';
 
 /**
  * Creates a secondary Firebase app instance to register new users
@@ -94,29 +94,29 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit User' : 'New User'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700">
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Display Name *</label>
             <input
               {...register('displayName', { required: 'Name is required' })}
               className={inputCls}
-              placeholder="John Smith"
+              placeholder="John Doe"
             />
             {errors.displayName && <p className="text-xs text-red-500 mt-0.5">{errors.displayName.message}</p>}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Phone</label>
             <input
               {...register('phone')}
               type="text"
@@ -126,7 +126,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Location</label>
             <input
               {...register('location')}
               type="text"
@@ -138,17 +138,17 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           {!isEditing && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Email *</label>
                 <input
                   {...register('email', { required: 'Email is required' })}
                   type="email"
                   className={inputCls}
-                  placeholder="user@example.com"
+                  placeholder="john@example.com"
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-0.5">{errors.email.message}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Password *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Password *</label>
                 <input
                   {...register('password', {
                     required: 'Password is required',
@@ -164,7 +164,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Role</label>
             <select {...register('role')} className={inputCls}>
               <option value="user">User</option>
               <option value="admin">Admin</option>
@@ -172,20 +172,20 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-2">Assigned Stores</label>
-            <div className="space-y-1.5 max-h-36 overflow-y-auto border border-gray-100 rounded-lg p-2">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-2">Assigned Stores</label>
+            <div className="space-y-1.5 max-h-36 overflow-y-auto border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-700/40 rounded-lg p-2">
               {stores.length === 0 ? (
-                <p className="text-xs text-gray-400 py-1">No stores yet. Create stores first.</p>
+                <p className="text-xs text-gray-400 dark:text-slate-400 py-1">No stores yet. Create stores first.</p>
               ) : (
                 stores.map((store) => (
-                  <label key={store.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 rounded">
+                  <label key={store.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/60 px-1 rounded">
                     <input
                       type="checkbox"
                       value={store.id}
                       {...register('assignedStores')}
                       className="accent-purple-600 w-3.5 h-3.5"
                     />
-                    <span className="text-gray-700">{store.name}</span>
+                    <span className="text-gray-700 dark:text-slate-200">{store.name}</span>
                   </label>
                 ))
               )}
@@ -193,7 +193,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
               Cancel
             </button>
             <button
@@ -267,11 +267,11 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       <div className="flex items-center justify-between px-6 py-4 shrink-0">
-        <p className="text-sm text-gray-500">{users.length} user(s)</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">{users.length} user(s)</p>
         <div className="flex items-center gap-2">
-          <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">
+          <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
@@ -290,14 +290,14 @@ const UsersPage = () => {
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">No users yet.</div>
+          <div className="text-center py-16 text-gray-400 dark:text-slate-500 text-sm">No users yet.</div>
         ) : (
           <div className="space-y-2">
             {users.map((u) => {
               const uid = u.uid || u.id;
               const avatarColor = stringToColor(u.displayName);
               return (
-                <div key={uid} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm transition-all">
+                <div key={uid} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
                     style={{ background: avatarColor }}
@@ -306,36 +306,36 @@ const UsersPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-800">{u.displayName}</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">{u.displayName}</p>
                       {u.role === 'admin' && (
-                        <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-xs bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
                           <Shield size={10} /> Admin
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400">{u.email}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                    <p className="text-xs text-gray-400 dark:text-slate-400">{u.email}</p>
+                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">
                       {getStoreNames(u.assignedStores)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleResetPassword(u)}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      className="p-2 text-gray-400 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-all"
                       title="Send password reset email"
                     >
                       <Mail size={14} />
                     </button>
                     <button
                       onClick={() => { setEditingUser(u); setShowModal(true); }}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                      className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
                       title="Edit user"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(u)}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2 text-red-400 dark:text-rose-400 hover:text-red-600 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg transition-all"
                       title="Delete user"
                     >
                       <Trash2 size={14} />

@@ -72,12 +72,12 @@ const QuotationsPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-gray-800">Quotations</h1>
-          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+          <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100">Quotations</h1>
+          <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
             {quotations.length}
           </span>
         </div>
@@ -85,7 +85,7 @@ const QuotationsPage = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -112,7 +112,7 @@ const QuotationsPage = () => {
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
           </div>
         ) : quotations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+          <div className="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-slate-500 gap-2">
             <FileText size={36} className="opacity-30" />
             <p className="text-sm">No quotations yet. Generate one from a lead.</p>
           </div>
@@ -122,35 +122,35 @@ const QuotationsPage = () => {
               <div
                 key={q.id}
                 onClick={() => setViewingQuote(q)}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-sm hover:border-purple-200 cursor-pointer transition-all"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm hover:border-purple-200 dark:hover:border-purple-500 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-4 w-full sm:w-auto flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                    <FileText size={18} className="text-purple-500" />
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center shrink-0">
+                    <FileText size={18} className="text-purple-500 dark:text-purple-400" />
                   </div>
   
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">
                       {q.customerDetails?.name || 'Unknown customer'} - {q.quotationNumber || q.id.slice(-6).toUpperCase()}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
                       {q.createdAt ? formatDate(q.createdAt?.toDate?.() || q.createdAt) : 'Just now'}
                     </p>
                   </div>
   
-                  <div className="text-sm font-bold text-gray-800 whitespace-nowrap px-2">
+                  <div className="text-sm font-bold text-gray-800 dark:text-slate-100 whitespace-nowrap px-2">
                     ₹{(q.totalAmount || 0).toLocaleString('en-IN')}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start pt-3 sm:pt-0 border-t sm:border-0 border-gray-100 dark:border-slate-700">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingQuote(q);
                       setShowModal(true);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 bg-gray-50 rounded-lg hover:bg-gray-100 hover:text-gray-800 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 dark:text-slate-200 border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition-all"
                   >
                     <Edit2 size={13} />
                     Edit
@@ -161,10 +161,10 @@ const QuotationsPage = () => {
                       handleDownload(q);
                     }}
                     disabled={downloadingId === q.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-all disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all disabled:opacity-50"
                   >
                     {downloadingId === q.id ? (
-                      <span className="spinner w-3 h-3 border-purple-600" />
+                      <span className="spinner w-3 h-3 border-purple-600 dark:border-purple-400" />
                     ) : (
                       <>
                         <ExternalLink size={13} />
