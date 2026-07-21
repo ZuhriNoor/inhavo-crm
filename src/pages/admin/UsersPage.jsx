@@ -9,6 +9,7 @@ import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 
 import { db } from '../../services/firebase';
 import { getStores } from '../../services/storesService';
 import { getInitials, stringToColor } from '../../utils/helpers';
+import { useAuth } from '../../contexts/AuthContext';
 
 const inputCls =
   'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400';
@@ -37,6 +38,7 @@ const createUserWithSecondaryApp = async (email, password) => {
 };
 
 const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
+  const { user: authUser, refreshProfile } = useAuth();
   const isEditing = !!editUser;
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
@@ -44,6 +46,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
       email: editUser?.email || '',
       password: '',
       role: editUser?.role || 'user',
+      phone: editUser?.phone || '',
+      location: editUser?.location || '',
       assignedStores: editUser?.assignedStores || [],
     },
   });
@@ -58,8 +62,13 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
         await updateUser(editUser.uid || editUser.id, {
           displayName: data.displayName,
           role: data.role,
+          phone: data.phone || '',
+          location: data.location || '',
           assignedStores,
         });
+        if (authUser && (editUser.uid || editUser.id) === authUser.uid) {
+          await refreshProfile();
+        }
       } else {
         // Create auth user via secondary app (keeps admin signed in)
         const uid = await createUserWithSecondaryApp(data.email, data.password);
@@ -69,6 +78,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           email: data.email,
           displayName: data.displayName,
           role: data.role,
+          phone: data.phone || '',
+          location: data.location || '',
           assignedStores,
           createdAt: serverTimestamp(),
         });
@@ -102,6 +113,26 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
               placeholder="John Smith"
             />
             {errors.displayName && <p className="text-xs text-red-500 mt-0.5">{errors.displayName.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+            <input
+              {...register('phone')}
+              type="text"
+              className={inputCls}
+              placeholder="+1 234 567 890"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <input
+              {...register('location')}
+              type="text"
+              className={inputCls}
+              placeholder="e.g. New York, NY"
+            />
           </div>
 
           {!isEditing && (

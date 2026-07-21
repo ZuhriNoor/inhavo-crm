@@ -5,6 +5,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { createQuotation, updateQuotation } from '../../services/quotationsService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStore } from '../../contexts/StoreContext';
 import QuotationPDF from '../../utils/pdfTemplate';
 
 const inputCls =
@@ -18,10 +19,14 @@ const defaultTerms = `• A deposit of 50% of the total amount is required to co
 • Gst And Transportation extra`;
 
 const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { availableStores } = useStore();
   const [generating, setGenerating] = useState(false);
   const [submitAction, setSubmitAction] = useState('download'); // 'save' | 'download'
   const [pdfUrl, setPdfUrl] = useState('');
+
+  const currentStore = availableStores.find((s) => s.id === storeId);
+  const storeDefaultTerms = currentStore?.defaultTerms || defaultTerms;
 
   const { register, control, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm({
     defaultValues: {
@@ -29,12 +34,12 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
       customerEmail: lead?.email || '',
       customerPhone: lead?.phone || '',
       customerAddress: lead?.address || '',
-      notes: defaultTerms,
+      notes: storeDefaultTerms,
       items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
     },
   });
 
-  // Pre-fill if editing
+  // Pre-fill if editing or reset with defaults if new
   useEffect(() => {
     if (editingQuotation) {
       reset({
@@ -45,8 +50,17 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         notes: editingQuotation.notes || '',
         items: editingQuotation.items?.length ? editingQuotation.items : [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
       });
+    } else {
+      reset({
+        customerName: lead?.customerName || '',
+        customerEmail: lead?.email || '',
+        customerPhone: lead?.phone || '',
+        customerAddress: lead?.address || '',
+        notes: storeDefaultTerms,
+        items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
+      });
     }
-  }, [editingQuotation, reset]);
+  }, [editingQuotation, lead, storeDefaultTerms, reset]);
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const items = watch('items');
@@ -111,6 +125,13 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         notes: data.notes,
         totalAmount,
         createdBy: user?.uid,
+        preparedBy: {
+          name: profile?.displayName || user?.email || 'Unknown User',
+          phone: profile?.phone || '',
+          location: profile?.location || '',
+        },
+        storeAddress: currentStore?.address || '',
+        storeBankDetails: currentStore?.bankDetails || '',
         pdfUrl: '',
       };
 
@@ -336,7 +357,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                     defaultChecked={true}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setValue('notes', defaultTerms);
+                        setValue('notes', storeDefaultTerms);
                       } else {
                         setValue('notes', '');
                       }

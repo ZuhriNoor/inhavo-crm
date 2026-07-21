@@ -14,6 +14,9 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
     defaultValues: {
       name: editStore?.name || '',
       description: editStore?.description || '',
+      address: editStore?.address || '',
+      bankDetails: editStore?.bankDetails || '',
+      defaultTerms: editStore?.defaultTerms || '',
     },
   });
 
@@ -33,8 +36,8 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-semibold text-gray-800">
             {isEditing ? 'Edit Store' : 'New Store'}
           </h2>
@@ -42,27 +45,56 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
             <X size={18} />
           </button>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Store Name *</label>
-            <input
-              {...register('name', { required: 'Name is required' })}
-              className={inputCls}
-              placeholder="Mumbai Branch"
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name.message}</p>}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0">
+          <div className="px-6 py-4 space-y-4 overflow-y-auto">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Store Name *</label>
+              <input
+                {...register('name', { required: 'Name is required' })}
+                className={inputCls}
+                placeholder="Mumbai Branch"
+              />
+              {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name.message}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+              <textarea
+                {...register('description')}
+                rows={2}
+                className={inputCls + ' resize-none'}
+                placeholder="Optional description…"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Company Address (For PDF)</label>
+              <textarea
+                {...register('address')}
+                rows={2}
+                className={inputCls + ' resize-none'}
+                placeholder="123 Business Rd, City, Country"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Bank Details (For PDF)</label>
+              <textarea
+                {...register('bankDetails')}
+                rows={2}
+                className={inputCls + ' resize-none'}
+                placeholder="Bank Name: XYZ Bank&#10;A/C No: 123456789"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Default Terms (For PDF)</label>
+              <textarea
+                {...register('defaultTerms')}
+                rows={2}
+                className={inputCls + ' resize-none'}
+                placeholder="1. Payment 100% advance..."
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-            <textarea
-              {...register('description')}
-              rows={2}
-              className={inputCls + ' resize-none'}
-              placeholder="Optional description…"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 shrink-0 bg-gray-50 rounded-b-2xl">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg bg-white border border-gray-200">
               Cancel
             </button>
             <button

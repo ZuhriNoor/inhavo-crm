@@ -117,6 +117,26 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 1.4,
   },
+  footerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 30,
+    marginBottom: 40,
+  },
+  footerBlock: {
+    width: '45%',
+  },
+  footerTitle: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 5,
+    color: '#111827',
+  },
+  footerText: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.4,
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -153,11 +173,17 @@ const QuotationPDF = ({ quotation }) => {
             <Image style={styles.logoImage} src="/inhavo-logo-quotation-top.png" />
           </View>
           <View style={styles.companyDetails}>
-            <Text>Mob: 96332 71361</Text>
-            <Text>Address: 2 nd Floor, AAK mall TM</Text>
-            <Text>A. Naduvilangadi, Tirur, Kerala 676107</Text>
-            <Text>Email: info@inhavo.com</Text>
-            <Text>website: www.inhavo.com</Text>
+            {quotation.storeAddress ? (
+              <Text>{quotation.storeAddress}</Text>
+            ) : (
+              <>
+                <Text>Mob: 96332 71361</Text>
+                <Text>Address: 2 nd Floor, AAK mall TM</Text>
+                <Text>A. Naduvilangadi, Tirur, Kerala 676107</Text>
+                <Text>Email: info@inhavo.com</Text>
+                <Text>website: www.inhavo.com</Text>
+              </>
+            )}
           </View>
         </View>
         
@@ -219,6 +245,28 @@ const QuotationPDF = ({ quotation }) => {
         <View style={styles.termsContainer} wrap={false}>
           <Text style={styles.termsTitle}>Terms and conditions</Text>
           <Text style={styles.termsText}>{notes || 'No special terms.'}</Text>
+        </View>
+
+        {/* Footer section (Bank Details & Prepared By) */}
+        <View style={styles.footerSection} wrap={false}>
+          <View style={styles.footerBlock}>
+            {quotation.storeBankDetails && (
+              <>
+                <Text style={styles.footerTitle}>Bank Account Details</Text>
+                <Text style={styles.footerText}>{quotation.storeBankDetails}</Text>
+              </>
+            )}
+          </View>
+          <View style={[styles.footerBlock, { alignItems: 'flex-end' }]}>
+            {quotation.preparedBy && (
+              <>
+                <Text style={styles.footerTitle}>Prepared By</Text>
+                <Text style={styles.footerText}>{quotation.preparedBy.name}</Text>
+                {quotation.preparedBy.location && <Text style={styles.footerText}>{quotation.preparedBy.location}</Text>}
+                {quotation.preparedBy.phone && <Text style={styles.footerText}>{quotation.preparedBy.phone}</Text>}
+              </>
+            )}
+          </View>
         </View>
 
         {/* Full-width brown rectangle at the bottom */}

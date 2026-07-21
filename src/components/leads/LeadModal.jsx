@@ -205,23 +205,21 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <Field label="Expected Revenue" icon={IndianRupee}>
-                  <input
-                    {...register('expectedRevenue')}
-                    type="number"
-                    className={inputCls(true)}
-                    placeholder="0.00"
-                  />
-                </Field>
-                <Field label="Expected Closing" icon={Target}>
-                  <input
-                    {...register('expectedClosingDate')}
-                    type="date"
-                    className={inputCls(true)}
-                  />
-                </Field>
-              </div>
+              <Field label="Expected Revenue" icon={IndianRupee}>
+                <input
+                  {...register('expectedRevenue')}
+                  type="number"
+                  className={inputCls(true)}
+                  placeholder="0.00"
+                />
+              </Field>
+              <Field label="Expected Closing" icon={Target}>
+                <input
+                  {...register('expectedClosingDate')}
+                  type="date"
+                  className={inputCls(true)}
+                />
+              </Field>
 
               <Field label="Looking For" icon={StickyNote}>
                 <textarea
