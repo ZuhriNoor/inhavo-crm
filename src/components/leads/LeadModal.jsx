@@ -129,7 +129,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
 
         {/* Form body */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 md:gap-y-4">
             
             {/* LEFT COLUMN */}
             <div className="space-y-4">
@@ -205,7 +205,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <Field label="Expected Revenue" icon={IndianRupee}>
                   <input
                     {...register('expectedRevenue')}
@@ -232,7 +232,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 />
               </Field>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Stage</label>
                   <select

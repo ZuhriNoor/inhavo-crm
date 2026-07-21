@@ -11,6 +11,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -36,12 +37,29 @@ export const getLead = async (id) => {
 
 /** Create a new lead */
 export const createLead = async (data) => {
-  const ref = await addDoc(collection(db, LEADS_COL), {
-    ...data,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+  return await runTransaction(db, async (transaction) => {
+    const counterRef = doc(db, 'counters', 'leadCounter');
+    const counterDoc = await transaction.get(counterRef);
+
+    let nextCount = 1;
+    if (counterDoc.exists()) {
+      nextCount = (counterDoc.data().currentCount || 0) + 1;
+    }
+
+    const leadNumber = `ENQ${String(nextCount).padStart(5, '0')}`;
+
+    transaction.set(counterRef, { currentCount: nextCount }, { merge: true });
+
+    const newLeadRef = doc(collection(db, LEADS_COL));
+    transaction.set(newLeadRef, {
+      ...data,
+      leadNumber,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return newLeadRef.id;
   });
-  return ref.id;
 };
 
 /** Update a lead */

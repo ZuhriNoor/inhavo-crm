@@ -28,10 +28,12 @@ export const getTasks = async (storeIds) => {
 };
 
 /** Fetch tasks for a specific lead */
-export const getTasksByLead = async (leadId) => {
+export const getTasksByLead = async (leadId, storeId) => {
+  const constraints = [where('leadId', '==', leadId)];
+  if (storeId) constraints.push(where('storeId', '==', storeId));
   const q = query(
     collection(db, TASKS_COL),
-    where('leadId', '==', leadId),
+    ...constraints,
     orderBy('deadline', 'asc'),
   );
   const snap = await getDocs(q);

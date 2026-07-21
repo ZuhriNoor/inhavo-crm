@@ -16,10 +16,12 @@ import { db } from './firebase';
 const QUOTATIONS_COL = 'quotations';
 
 /** Fetch all quotations for a lead */
-export const getQuotationsByLead = async (leadId) => {
+export const getQuotationsByLead = async (leadId, storeId) => {
+  const constraints = [where('leadId', '==', leadId)];
+  if (storeId) constraints.push(where('storeId', '==', storeId));
   const q = query(
     collection(db, QUOTATIONS_COL),
-    where('leadId', '==', leadId),
+    ...constraints,
     orderBy('createdAt', 'desc'),
   );
   const snap = await getDocs(q);

@@ -3,7 +3,7 @@ import { Bell, Search, X, Check, Trash2, Menu } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDistanceToNow } from '../../utils/helpers';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const BREADCRUMB_MAP = {
   '/': 'CRM / Kanban',
@@ -26,8 +26,20 @@ const Topbar = ({ onMenuClick }) => {
   const [search, setSearch] = useState('');
   const panelRef = useRef(null);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const breadcrumb = BREADCRUMB_MAP[pathname] || 'CRM';
+
+  const handleNotificationClick = (n) => {
+    if (!n.read) readOne(n.id);
+    setNotifOpen(false);
+    
+    if (n.type === 'lead_assigned' && n.relatedId) {
+      navigate(`/leads/${n.relatedId}`);
+    } else if ((n.type === 'task_due' || n.type === 'task_overdue')) {
+      navigate('/tasks');
+    }
+  };
 
   // Close panel on outside click
   useEffect(() => {
@@ -118,7 +130,8 @@ const Topbar = ({ onMenuClick }) => {
                 notifications.slice(0, 20).map((n) => (
                   <div
                     key={n.id}
-                    className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors group ${
+                    onClick={() => handleNotificationClick(n)}
+                    className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors group cursor-pointer ${
                       !n.read ? 'bg-purple-50/50' : ''
                     }`}
                   >
@@ -136,7 +149,7 @@ const Topbar = ({ onMenuClick }) => {
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {!n.read && (
                         <button
-                          onClick={() => readOne(n.id)}
+                          onClick={(e) => { e.stopPropagation(); readOne(n.id); }}
                           className="p-1 rounded text-gray-400 hover:text-purple-600 hover:bg-purple-50"
                           title="Mark read"
                         >
@@ -144,7 +157,7 @@ const Topbar = ({ onMenuClick }) => {
                         </button>
                       )}
                       <button
-                        onClick={() => remove(n.id)}
+                        onClick={(e) => { e.stopPropagation(); remove(n.id); }}
                         className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50"
                         title="Delete"
                       >

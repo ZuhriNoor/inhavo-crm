@@ -1,11 +1,11 @@
 // UsersPage — Admin: manage users
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit2, Trash2, X, Shield, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Shield, RefreshCw, Mail } from 'lucide-react';
 import { getUsers, updateUser, deleteUserProfile } from '../../services/usersService';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { db } from '../../services/firebase';
 import { getStores } from '../../services/storesService';
 import { getInitials, stringToColor } from '../../utils/helpers';
@@ -217,6 +217,17 @@ const UsersPage = () => {
     }
   };
 
+  const handleResetPassword = async (user) => {
+    if (!confirm(`Send password reset email to ${user.email}?`)) return;
+    try {
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, user.email);
+      alert(`Password reset email sent to ${user.email}`);
+    } catch (err) {
+      alert(`Error sending reset email: ${err.message}`);
+    }
+  };
+
   const getStoreNames = (storeIds) => {
     if (!storeIds || storeIds.length === 0) return 'No stores assigned';
     return storeIds
@@ -277,6 +288,13 @@ const UsersPage = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleResetPassword(u)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Send password reset email"
+                    >
+                      <Mail size={14} />
+                    </button>
                     <button
                       onClick={() => { setEditingUser(u); setShowModal(true); }}
                       className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"

@@ -69,9 +69,16 @@ const KanbanCard = ({ lead, users }) => {
     >
       {/* Top Row: Opportunity Title & Priority */}
       <div className="flex items-start justify-between mb-1.5 gap-2">
-        <p className="font-bold text-gray-900 text-sm leading-tight truncate flex-1">
-          {lead.opportunityTitle || 'Unnamed Opportunity'}
-        </p>
+        <div className="flex flex-col min-w-0 flex-1">
+          {lead.leadNumber && (
+            <span className="text-[10px] font-bold text-purple-600 mb-0.5 tracking-wider">
+              {lead.leadNumber}
+            </span>
+          )}
+          <p className="font-bold text-gray-900 text-sm leading-tight truncate">
+            {lead.opportunityTitle || 'Unnamed Opportunity'}
+          </p>
+        </div>
         <div className="flex items-center shrink-0" onPointerDown={(e) => e.stopPropagation()}>
           {[1, 2, 3].map((star) => (
             <button

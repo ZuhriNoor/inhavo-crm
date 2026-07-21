@@ -84,10 +84,16 @@ const LeadDetailPage = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadData, tasksData, quotsData, stagesData, usersData] = await Promise.all([
-        getLead(leadId),
-        getTasksByLead(leadId),
-        getQuotationsByLead(leadId),
+      const leadData = await getLead(leadId);
+      if (!leadData) {
+        setLead(null);
+        setLoading(false);
+        return;
+      }
+
+      const [tasksData, quotsData, stagesData, usersData] = await Promise.all([
+        getTasksByLead(leadId, leadData.storeId),
+        getQuotationsByLead(leadId, leadData.storeId),
         getStages(),
         getUsers(),
       ]);
@@ -147,6 +153,11 @@ const LeadDetailPage = () => {
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
+          {lead.leadNumber && (
+            <div className="text-[11px] font-bold text-purple-600 mb-0.5 tracking-wider">
+              {lead.leadNumber}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <h1 className="text-base font-semibold text-gray-800 truncate">
               {lead.opportunityTitle || lead.customerName}
