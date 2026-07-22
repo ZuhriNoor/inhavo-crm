@@ -207,13 +207,13 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 space-y-5">
+          <div className="px-4 sm:px-6 py-4 space-y-5">
             {/* Customer Details */}
             <div>
               <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">
                 Customer Details
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Name</label>
                   <input {...register('customerName', { required: true })} className={inputCls} placeholder="Customer Name" />
@@ -226,9 +226,14 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                   <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Phone</label>
                   <input {...register('customerPhone')} className={inputCls} placeholder="+91 98765 43210" />
                 </div>
-                <div>
+                <div className="col-span-1 sm:col-span-2">
                   <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Address</label>
-                  <input {...register('customerAddress')} className={inputCls} placeholder="Address" />
+                  <textarea
+                    {...register('customerAddress')}
+                    className={`${inputCls} resize-y min-h-[60px] py-2`}
+                    placeholder="Customer Address"
+                    rows={2}
+                  />
                 </div>
               </div>
             </div>
@@ -241,74 +246,89 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                 </h3>
               </div>
 
-              {/* Table header */}
-              <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-400 dark:text-slate-400 mb-2 px-1">
-                <span className="col-span-3">Photo</span>
-                <span className="col-span-4">Item Details</span>
-                <span className="col-span-2 text-center">Qty</span>
-                <span className="col-span-2 text-center">Rate</span>
-                <span className="col-span-1 text-right">Total</span>
-              </div>
-
               {fields.map((field, idx) => {
                 const rowTotal = (Number(items[idx]?.qty) || 0) * (Number(items[idx]?.unitPrice) || 0);
                 return (
-                  <div key={field.id} className="grid grid-cols-12 gap-2 mb-2 items-start">
-                    <div className="col-span-3 space-y-1">
-                      {items[idx]?.photo && (
-                        <img src={items[idx].photo} alt="Preview" className="w-full h-12 object-contain bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded" />
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handlePhotoChange(idx, e)}
-                        className="w-full text-[10px] text-gray-500 dark:text-slate-400 overflow-hidden file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-purple-50 dark:file:bg-purple-950/60 file:text-purple-700 dark:file:text-purple-300 hover:file:bg-purple-100 dark:hover:file:bg-purple-900/50"
-                      />
+                  <div key={field.id} className="p-3 bg-gray-50/60 dark:bg-slate-700/40 border border-gray-200 dark:border-slate-700 rounded-xl mb-3 relative">
+                    <div className="grid grid-cols-12 gap-3 items-start">
+                      {/* Photo */}
+                      <div className="col-span-12 sm:col-span-2 space-y-1.5">
+                        <label className="block text-[11px] font-medium text-gray-500 dark:text-slate-400">Photo</label>
+                        {items[idx]?.photo && (
+                          <img src={items[idx].photo} alt="Preview" className="w-full h-20 sm:h-16 object-contain bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-0.5" />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoChange(idx, e)}
+                          className="w-full text-[10px] text-gray-500 dark:text-slate-400 overflow-hidden file:mr-1 file:py-1 file:px-1.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-purple-50 dark:file:bg-purple-950/60 file:text-purple-700 dark:file:text-purple-300 hover:file:bg-purple-100"
+                        />
+                      </div>
+
+                      {/* Item Details */}
+                      <div className="col-span-12 sm:col-span-6 space-y-2">
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 dark:text-slate-400 mb-1">Product Name</label>
+                          <input
+                            {...register(`items.${idx}.name`, { required: true })}
+                            className={inputCls}
+                            placeholder="Product or Service name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 dark:text-slate-400 mb-1">Description</label>
+                          <textarea
+                            {...register(`items.${idx}.description`)}
+                            className={`${inputCls} resize-y min-h-[56px] py-1.5`}
+                            placeholder="Description (optional)"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Qty, Rate & Total (Stacked in 2 rows) */}
+                      <div className="col-span-12 sm:col-span-4 space-y-2 bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-gray-100 dark:border-slate-700/60">
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 dark:text-slate-400 mb-1">Quantity</label>
+                          <input
+                            {...register(`items.${idx}.qty`)}
+                            type="number"
+                            min="1"
+                            className={inputCls}
+                            placeholder="1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 dark:text-slate-400 mb-1">Unit Rate (₹)</label>
+                          <input
+                            {...register(`items.${idx}.unitPrice`)}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className={inputCls}
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Total:</span>
+                          <span className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                            ₹{rowTotal.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="col-span-4 space-y-1">
-                      <input
-                        {...register(`items.${idx}.name`, { required: true })}
-                        className={inputCls}
-                        placeholder="Product name"
-                      />
-                      <textarea
-                        {...register(`items.${idx}.description`)}
-                        className={`${inputCls} resize-y min-h-[64px] py-2`}
-                        placeholder="Description (optional)"
-                        rows={2}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        {...register(`items.${idx}.qty`)}
-                        type="number"
-                        min="1"
-                        className={inputCls + ' text-center'}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        {...register(`items.${idx}.unitPrice`)}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className={inputCls + ' text-right'}
-                      />
-                    </div>
-                    <div className="col-span-1 flex items-center justify-end gap-1 pt-2">
-                      <span className="text-sm font-medium text-gray-700 dark:text-slate-200 text-right truncate">
-                        ₹{rowTotal.toLocaleString('en-IN')}
-                      </span>
-                      {fields.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => remove(idx)}
-                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded flex-shrink-0"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
+
+                    {fields.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                        title="Remove Item"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -361,15 +381,15 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-slate-700">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-center">
               Cancel
             </button>
             <button
               type="submit"
               onClick={() => setSubmitAction('save')}
               disabled={isSubmitting || generating}
-              className="px-5 py-2 text-sm font-medium rounded-lg text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 disabled:opacity-60 transition-colors"
+              className="w-full sm:w-auto px-5 py-2 text-sm font-medium rounded-lg text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 disabled:opacity-60 transition-colors text-center"
             >
               {generating && submitAction === 'save' ? 'Saving...' : 'Save Only'}
             </button>
@@ -377,7 +397,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
               type="submit"
               onClick={() => setSubmitAction('download')}
               disabled={isSubmitting || generating}
-              className="px-5 py-2 text-sm text-white font-medium rounded-lg flex items-center gap-2 disabled:opacity-60"
+              className="w-full sm:w-auto px-5 py-2 text-sm text-white font-medium rounded-lg flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: '#875a7b' }}
             >
               {generating && submitAction === 'download' ? (

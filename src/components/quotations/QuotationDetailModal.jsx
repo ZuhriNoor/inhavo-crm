@@ -48,7 +48,7 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Address</p>
-                <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{quotation.customerDetails?.address || '-'}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-slate-200 whitespace-pre-wrap">{quotation.customerDetails?.address || '-'}</p>
               </div>
             </div>
           </div>
