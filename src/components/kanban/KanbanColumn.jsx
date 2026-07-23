@@ -10,9 +10,9 @@ const KanbanColumn = ({ stage, leads, users, onAddLead }) => {
   const leadIds = leads.map((l) => l.id);
 
   return (
-    <div className="flex flex-col shrink-0" style={{ width: 280 }}>
+    <div className="flex flex-col shrink-0 h-full max-h-full min-h-0" style={{ width: 280 }}>
       {/* Column header */}
-      <div className="flex items-center justify-between px-3 py-2.5 mb-2">
+      <div className="flex items-center justify-between px-3 py-2.5 mb-2 shrink-0">
         <div className="flex items-center gap-2">
           {/* Stage color dot */}
           <span
@@ -38,7 +38,7 @@ const KanbanColumn = ({ stage, leads, users, onAddLead }) => {
       {/* Droppable column body */}
       <div
         ref={setNodeRef}
-        className={`kanban-column px-1 rounded-lg transition-colors ${
+        className={`kanban-column flex-1 overflow-y-auto px-1 pb-4 rounded-lg transition-colors min-h-0 ${
           isOver ? 'bg-purple-50/60 dark:bg-purple-900/30' : 'bg-gray-100/50 dark:bg-slate-800/40'
         }`}
         style={{ minHeight: 120 }}

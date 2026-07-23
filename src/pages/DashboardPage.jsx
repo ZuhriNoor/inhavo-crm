@@ -123,7 +123,7 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Board header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100">
             {activeStore.name}
@@ -133,12 +133,12 @@ const DashboardPage = () => {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           {/* Refresh */}
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all disabled:opacity-40"
+            className="p-1.5 sm:p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all disabled:opacity-40"
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -148,7 +148,7 @@ const DashboardPage = () => {
           <button
             onClick={handleExport}
             disabled={loading || isExporting || leads.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50"
             title="Export to CSV"
           >
             {isExporting ? <span className="spinner w-3.5 h-3.5 border-gray-500 dark:border-slate-400" /> : <Download size={15} />}
@@ -158,7 +158,7 @@ const DashboardPage = () => {
           {/* New Lead */}
           <button
             onClick={() => handleAddLead(stages[0]?.id || '')}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg transition-all"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm text-white font-medium rounded-lg transition-all"
             style={{ background: '#875a7b' }}
           >
             <Plus size={15} />

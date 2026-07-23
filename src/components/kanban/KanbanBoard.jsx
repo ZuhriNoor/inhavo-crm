@@ -116,7 +116,7 @@ const KanbanBoard = ({ stages, leads, users, onAddLead, onLeadsChange }) => {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex gap-5 px-6 py-4 overflow-x-auto h-full items-start">
+      <div className="flex gap-4 sm:gap-5 px-4 sm:px-6 py-4 overflow-x-auto h-full items-stretch min-h-0">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}

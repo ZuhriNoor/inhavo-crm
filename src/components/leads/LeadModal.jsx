@@ -7,12 +7,24 @@ import { notifyLeadAssigned } from '../../services/notificationsService';
 import { toInputDate, fromInputDate } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
 
+const LEAD_SOURCES = [
+  'Walk-in Showroom',
+  'WhatsApp',
+  'Phone Call',
+  'Facebook',
+  'Google (Search/Ads)',
+  'Website',
+  'Referral',
+  'Architect / Interior Designer',
+  'Existing (Repeat) Customer',
+];
+
 const Field = ({ label, icon: Icon, error, children }) => (
   <div>
     <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">{label}</label>
     <div className="relative">
       {Icon && (
-        <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+        <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none z-10" />
       )}
       {children}
     </div>
@@ -112,10 +124,10 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Lead' : 'New Lead'}
           </h2>
@@ -129,7 +141,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
 
         {/* Form body */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 md:gap-y-4">
+          <div className="px-4 sm:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
             
             {/* LEFT COLUMN */}
             <div className="space-y-4">
@@ -181,7 +193,17 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
               </Field>
 
               <Field label="Lead Source" icon={Globe}>
-                <input {...register('source')} className={inputCls(true)} placeholder="e.g. Website, Referral" />
+                <select {...register('source')} className={`${inputCls(true)} max-w-full truncate`}>
+                  <option value="" className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">Select Lead Source</option>
+                  {LEAD_SOURCES.map((src) => (
+                    <option key={src} value={src} className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 py-1">
+                      {src}
+                    </option>
+                  ))}
+                  {lead?.source && !LEAD_SOURCES.includes(lead.source) && (
+                    <option value={lead.source} className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">{lead.source}</option>
+                  )}
+                </select>
               </Field>
             </div>
 
@@ -230,7 +252,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 />
               </Field>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Stage</label>
                   <select
@@ -238,7 +260,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
                   >
                     {stages?.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
+                      <option key={s.id} value={s.id} className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">{s.name}</option>
                     ))}
                   </select>
                 </div>
@@ -248,9 +270,9 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                     {...register('assignedUserId')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400"
                   >
-                    <option value="">Unassigned</option>
+                    <option value="" className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">Unassigned</option>
                     {users?.map((u) => (
-                      <option key={u.uid || u.id} value={u.uid || u.id}>{u.displayName}</option>
+                      <option key={u.uid || u.id} value={u.uid || u.id} className="bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100">{u.displayName}</option>
                     ))}
                   </select>
                 </div>
@@ -268,18 +290,18 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-slate-700">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 text-sm text-white font-medium rounded-lg transition-all disabled:opacity-60 flex items-center gap-2"
+              className="w-full sm:w-auto px-5 py-2 text-sm text-white font-medium rounded-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: '#875a7b' }}
             >
               {isSubmitting ? (

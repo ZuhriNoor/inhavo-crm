@@ -33,7 +33,7 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
           {/* Customer Details */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">Customer Information</h3>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700/40 rounded-xl p-4 border border-gray-100 dark:border-slate-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700/40 rounded-xl p-4 border border-gray-100 dark:border-slate-700">
               <div>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">Name</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{quotation.customerDetails?.name || '-'}</p>
@@ -56,8 +56,8 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
           {/* Line Items */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">Products & Services</h3>
-            <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
-              <table className="w-full text-left text-sm">
+            <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[480px]">
                 <thead className="bg-gray-50 dark:bg-slate-700/60 text-gray-500 dark:text-slate-300 text-xs uppercase">
                   <tr>
                     <th className="px-4 py-3 font-medium">Item</th>
@@ -112,17 +112,17 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
           <button
             onClick={onEdit}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all"
           >
             <Edit2 size={14} /> Edit
           </button>
           <button
             onClick={onDownload}
             disabled={isDownloading}
-            className="flex items-center gap-2 px-5 py-2 text-sm text-white font-medium rounded-lg transition-all disabled:opacity-60"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 text-sm text-white font-medium rounded-lg transition-all disabled:opacity-60"
             style={{ background: '#875a7b' }}
           >
             {isDownloading ? (
