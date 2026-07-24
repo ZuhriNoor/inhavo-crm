@@ -72,16 +72,16 @@ export const createSaleOrderFromQuotation = async (quotation) => {
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
     const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const monthKey = `${yy}${mm}`;
+    const yearKey = `Y${now.getFullYear()}`;
 
     let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[monthKey]) {
-      nextCount = counterDoc.data()[monthKey] + 1;
+    if (counterDoc.exists() && counterDoc.data()[yearKey]) {
+      nextCount = counterDoc.data()[yearKey] + 1;
     }
-    const salesOrderNumber = `SO${monthKey}${String(nextCount).padStart(3, '0')}`;
+    const salesOrderNumber = `SO/${mm}${yy}/${String(nextCount).padStart(4, '0')}`;
 
     // Update counter
-    transaction.set(counterRef, { [monthKey]: nextCount }, { merge: true });
+    transaction.set(counterRef, { [yearKey]: nextCount }, { merge: true });
 
     // 3. Create Sale Order Document
     const salesOrderRef = doc(collection(db, SALES_ORDERS_COL));

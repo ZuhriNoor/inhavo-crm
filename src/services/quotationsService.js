@@ -55,20 +55,17 @@ export const createQuotation = async (data) => {
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
     const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const monthKey = `${yy}${mm}`;
+    const yearKey = `Y${now.getFullYear()}`;
 
     let nextCount = 1;
-    if (counterDoc.exists()) {
-      const counters = counterDoc.data();
-      if (counters[monthKey]) {
-        nextCount = counters[monthKey] + 1;
-      }
+    if (counterDoc.exists() && counterDoc.data()[yearKey]) {
+      nextCount = counterDoc.data()[yearKey] + 1;
     }
 
-    const quotationNumber = `INH${monthKey}${String(nextCount).padStart(3, '0')}`;
+    const quotationNumber = `QN/${mm}${yy}/${String(nextCount).padStart(4, '0')}`;
 
     // Update counter
-    transaction.set(counterRef, { [monthKey]: nextCount }, { merge: true });
+    transaction.set(counterRef, { [yearKey]: nextCount }, { merge: true });
 
     // Create quotation
     const newQuotationRef = doc(collection(db, QUOTATIONS_COL));

@@ -176,7 +176,8 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
       // Auto-trigger download
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `${data.customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${quotationNumber}.pdf`;
+      const safeQuotationNumber = quotationNumber.replace(/\//g, '-');
+      link.download = `${data.customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${safeQuotationNumber}.pdf`;
       link.click();
 
       setPdfUrl(blobUrl);

@@ -70,7 +70,9 @@ const LeadDetailPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${(q.customerDetails?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_')}_${q.quotationNumber || q.id.slice(-6).toUpperCase()}.pdf`;
+      const qNum = q.quotationNumber || q.id.slice(-6).toUpperCase();
+      const safeQNum = qNum.replace(/\//g, '-');
+      link.download = `${(q.customerDetails?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_')}_${safeQNum}.pdf`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (err) {
