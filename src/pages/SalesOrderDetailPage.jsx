@@ -33,8 +33,8 @@ export default function SalesOrderDetailPage() {
     fetchData();
   }, [orderId]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const orderData = await getSaleOrder(orderId);
       if (orderData) {
@@ -51,7 +51,7 @@ export default function SalesOrderDetailPage() {
     } catch (error) {
       console.error('Error fetching details:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -317,7 +317,7 @@ export default function SalesOrderDetailPage() {
           saleOrder={order}
           item={selectedItemForDocket}
           existingDocket={editingDocket}
-          onDocketCreated={fetchData}
+          onDocketCreated={() => fetchData(true)}
         />
       )}
 
@@ -326,7 +326,7 @@ export default function SalesOrderDetailPage() {
           isOpen={warrantyModalOpen}
           onClose={() => setWarrantyModalOpen(false)}
           saleOrder={order}
-          onWarrantyCreated={fetchData}
+          onWarrantyCreated={() => fetchData(true)}
         />
       )}
     </div>

@@ -70,7 +70,33 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setValue(`items.${idx}.photo`, reader.result);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          setValue(`items.${idx}.photo`, dataUrl);
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -88,7 +114,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         const qty = Number(item.qty) || 0;
         const unitPrice = Number(item.unitPrice) || 0;
         return {
-          name: item.name,
+          name: item.name || '',
           description: item.description || '',
           photo: item.photo || '',
           qty,
@@ -99,9 +125,9 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
 
       const payload = {
         leadId: lead?.id || editingQuotation?.leadId || null,
-        storeId,
+        storeId: storeId || '',
         customerDetails: {
-          name: data.customerName,
+          name: data.customerName || '',
           email: data.customerEmail || '',
           phone: data.customerPhone || '',
           address: data.customerAddress || '',
@@ -109,7 +135,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         items: formattedItems,
         totalAmount,
         notes: data.notes || '',
-        createdBy: user?.uid,
+        createdBy: user?.uid || '',
         preparedBy: {
           name: profile?.displayName || user?.email || 'Unknown User',
           phone: profile?.phone || '',

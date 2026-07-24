@@ -4,6 +4,7 @@ import { createDocket, updateDocketWithFiles, getDocketTemplates } from '../../s
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocketPDF } from '../../utils/docketPdfTemplate';
 import LoadingScreen from '../shared/LoadingScreen';
+import { compressImageFile } from '../../utils/imageUtils';
 
 export default function DocketModal({ isOpen, onClose, saleOrder, item, existingDocket, onDocketCreated }) {
   const [templates, setTemplates] = useState([]);
@@ -221,7 +222,12 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                             <Upload className="w-6 h-6 text-gray-400" />
                             <p className="text-xs text-gray-500">Upload Image</p>
                           </div>
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => { if(e.target.files[0]) setGeneralImageFile(e.target.files[0]); }} />
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { 
+                            if(e.target.files[0]) {
+                              const compressed = await compressImageFile(e.target.files[0]);
+                              setGeneralImageFile(compressed);
+                            }
+                          }} />
                         </label>
                       )}
                     </div>
@@ -269,7 +275,12 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                                 ) : (
                                   <label className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
                                     <ImageIcon size={16} /> Choose Image
-                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { if(e.target.files[0]) handleFieldDataChange(field.key, 'imageFile', e.target.files[0]); }} />
+                                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { 
+                                      if(e.target.files[0]) {
+                                        const compressed = await compressImageFile(e.target.files[0]);
+                                        handleFieldDataChange(field.key, 'imageFile', compressed);
+                                      }
+                                    }} />
                                   </label>
                                 )}
                               </div>
@@ -291,8 +302,12 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                           <Upload className="w-5 h-5 text-gray-400" />
                           <span className="font-medium text-gray-600 dark:text-slate-300">Click to upload additional files</span>
                       </span>
-                      <input type="file" name="file_upload" className="hidden" multiple accept="image/*,application/pdf" onChange={(e) => {
-                        if(e.target.files) setAdditionalFiles(prev => [...prev, ...Array.from(e.target.files)]);
+                      <input type="file" name="file_upload" className="hidden" multiple accept="image/*,application/pdf" onChange={async (e) => {
+                        if(e.target.files) {
+                          const files = Array.from(e.target.files);
+                          const compressedFiles = await Promise.all(files.map(f => compressImageFile(f)));
+                          setAdditionalFiles(prev => [...prev, ...compressedFiles]);
+                        }
                       }} />
                   </label>
                   

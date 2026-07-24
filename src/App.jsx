@@ -25,6 +25,7 @@ import AdminDocketTemplatesPage from './pages/admin/AdminDocketTemplatesPage';
 import AdminWarrantyConfigPage from './pages/admin/AdminWarrantyConfigPage';
 
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import PWAUpdatePrompt from './components/shared/PWAUpdatePrompt';
 
 // Protected route wrapper
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -103,6 +104,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <RouterProvider router={router} />
+        <PWAUpdatePrompt />
       </AuthProvider>
     </ThemeProvider>
   );
