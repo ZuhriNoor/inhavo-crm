@@ -9,6 +9,8 @@ import {
   query,
   where,
   orderBy,
+  limit,
+  onSnapshot,
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore';
@@ -16,15 +18,22 @@ import { db } from './firebase';
 
 const NOTIFS_COL = 'notifications';
 
-/** Fetch all notifications for a user */
-export const getNotifications = async (userId) => {
+/** Subscribe to notifications for a user (real-time) */
+export const subscribeToNotifications = (userId, callback) => {
   const q = query(
     collection(db, NOTIFS_COL),
     where('userId', '==', userId),
     orderBy('createdAt', 'desc'),
+    limit(30)
   );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  
+  return onSnapshot(q, (snap) => {
+    const notifications = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    callback(notifications);
+  }, (error) => {
+    console.error('Error fetching notifications:', error);
+    callback([]);
+  });
 };
 
 /** Create a notification */

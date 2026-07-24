@@ -1,9 +1,28 @@
-import React from 'react';
-import { X, Edit2, ExternalLink, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Edit2, ExternalLink, FileText, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createSaleOrderFromQuotation } from '../../services/salesOrdersService';
 import { formatDate } from '../../utils/helpers';
 
 const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownloading }) => {
+  const navigate = useNavigate();
+  const [isConverting, setIsConverting] = useState(false);
+
   if (!quotation) return null;
+
+  const handleConvert = async () => {
+    setIsConverting(true);
+    try {
+      const result = await createSaleOrderFromQuotation(quotation);
+      onClose();
+      navigate(`/sales-orders/${result.salesOrderId}`);
+    } catch (error) {
+      console.error('Error converting quotation:', error);
+      alert(error.message);
+    } finally {
+      setIsConverting(false);
+    }
+  };
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
@@ -113,6 +132,15 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
+          {quotation.status !== 'Converted' && (
+            <button
+              onClick={handleConvert}
+              disabled={isConverting}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 text-sm text-white bg-emerald-600 font-medium rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-60"
+            >
+              {isConverting ? 'Converting...' : <><CheckCircle size={14} /> Convert to Sale Order</>}
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all"

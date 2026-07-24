@@ -20,12 +20,11 @@ const NAV_ITEMS = [
   { to: '/leads', label: 'Leads', icon: Users },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/quotations', label: 'Quotations', icon: FileText },
+  { to: '/sales-orders', label: 'Sales Orders', icon: Store },
 ];
 
 const ADMIN_ITEMS = [
-  { to: '/admin/users', label: 'Users', icon: Shield },
-  { to: '/admin/stores', label: 'Stores', icon: Store },
-  { to: '/admin/pipeline', label: 'Pipeline', icon: GitBranch },
+  { to: '/admin', label: 'Settings', icon: Shield },
 ];
 
 const NavItem = ({ to, label, icon: Icon, exact, onClick }) => (

@@ -1,7 +1,7 @@
 // LeadsPage — standalone leads list with search and soft-delete toggle
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, RefreshCw, Search, Archive, Users } from 'lucide-react';
+import { Plus, RefreshCw, Search, Archive, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { getLeads } from '../services/leadsService';
 import { getStages } from '../services/stagesService';
@@ -16,38 +16,78 @@ const LeadsPage = () => {
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Pagination State
+  const [pageCursors, setPageCursors] = useState([null]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 15;
+  
   const [search, setSearch] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    setPageCursors([null]);
+    setCurrentPage(0);
+    fetchLeads(null, 0);
+  }, [activeStore]);
+
+  const fetchLeads = async (cursor, pageIndex) => {
     if (!activeStore) return;
     setLoading(true);
+    
     try {
-      const [leadsData, stagesData] = await Promise.all([
-        getLeads([activeStore.id], true), // Always fetch all, including deleted, to filter locally
+      const [leadsResponse, stagesData] = await Promise.all([
+        getLeads([activeStore.id], true, cursor, PAGE_SIZE),
         getStages([activeStore.id]),
       ]);
-      setLeads(leadsData);
+      
+      setLeads(leadsResponse.data);
+      setHasMore(leadsResponse.hasMore);
       setStages(stagesData);
+      
+      if (leadsResponse.hasMore && leadsResponse.lastDoc) {
+        setPageCursors(prev => {
+          const newCursors = [...prev];
+          newCursors[pageIndex + 1] = leadsResponse.lastDoc;
+          return newCursors;
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [activeStore]);
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const handleNextPage = () => {
+    if (hasMore) {
+      const nextCursor = pageCursors[currentPage + 1];
+      setCurrentPage(prev => prev + 1);
+      fetchLeads(nextCursor, currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      const prevCursor = pageCursors[currentPage - 1];
+      setCurrentPage(prev => prev - 1);
+      fetchLeads(prevCursor, currentPage - 1);
+    }
+  };
+
+  const handleRefresh = () => {
+    setPageCursors([null]);
+    setCurrentPage(0);
+    fetchLeads(null, 0);
+  };
 
   // Filter leads based on deleted toggle and search query
   const filteredLeads = leads.filter((l) => {
     // 1. Deleted filter
     if (!showDeleted && l.deleted) return false;
-    if (showDeleted && !l.deleted) return false; // Or just show both? The prompt says "see deleted items". Usually means show deleted ONLY or show BOTH. Let's make it show BOTH if checked.
-    // Wait, let's just make it show deleted items alongside active ones.
+    if (showDeleted && !l.deleted) return false; 
     if (!showDeleted && l.deleted) return false;
 
     // 2. Search filter
@@ -87,7 +127,7 @@ const LeadsPage = () => {
 
           <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={loadData}
+              onClick={handleRefresh}
               disabled={loading}
               className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
               title="Refresh"
@@ -126,11 +166,32 @@ const LeadsPage = () => {
             Show Deleted
           </label>
 
+          {/* Pagination Controls */}
+          {!search && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {currentPage + 1}</span>
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 0 || loading}
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                onClick={handleNextPage}
+                disabled={!hasMore || loading}
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+
           <div className="hidden md:flex items-center gap-2">
             <div className="h-5 w-px bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
             <button
-              onClick={loadData}
+              onClick={handleRefresh}
               disabled={loading}
               className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
               title="Refresh"
@@ -262,6 +323,7 @@ const LeadsPage = () => {
                 </tbody>
               </table>
             </div>
+
           </>
         )}
       </div>
@@ -271,9 +333,7 @@ const LeadsPage = () => {
           stages={stages}
           storeId={activeStore.id}
           onClose={() => setShowModal(false)}
-          onSaved={() => {
-            loadData();
-          }}
+          onSaved={handleRefresh}
         />
       )}
     </div>

@@ -1,11 +1,12 @@
-// AdminDashboard — layout for admin sub-pages
 import { Outlet, NavLink } from 'react-router-dom';
-import { Users, Store, GitBranch } from 'lucide-react';
+import { Users, Store, GitBranch, FileText, Shield } from 'lucide-react';
 
 const TABS = [
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/stores', label: 'Stores', icon: Store },
   { to: '/admin/pipeline', label: 'Pipeline Stages', icon: GitBranch },
+  { to: '/admin/docket-templates', label: 'Docket Config', icon: FileText },
+  { to: '/admin/warranty-config', label: 'Warranty Config', icon: Shield },
 ];
 
 const AdminDashboard = () => {

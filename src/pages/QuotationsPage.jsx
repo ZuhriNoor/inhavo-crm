@@ -1,6 +1,6 @@
 // QuotationsPage — list of all quotations across the active store
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, ExternalLink, RefreshCw, Edit2 } from 'lucide-react';
+import { FileText, ExternalLink, RefreshCw, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { getTasks } from '../services/tasksService';
 import { formatDate } from '../utils/helpers';
@@ -16,31 +16,69 @@ const QuotationsPage = () => {
   const { activeStore } = useStore();
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Pagination State
+  const [pageCursors, setPageCursors] = useState([null]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 15;
+  
   const [showModal, setShowModal] = useState(false);
   const [editingQuote, setEditingQuote] = useState(null);
   const [viewingQuote, setViewingQuote] = useState(null);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    setPageCursors([null]);
+    setCurrentPage(0);
+    fetchQuotations(null, 0);
+  }, [activeStore]);
+
+  const fetchQuotations = async (cursor, pageIndex) => {
     if (!activeStore) return;
     setLoading(true);
+
     try {
-      const q = query(
-        collection(db, 'quotations'),
-        where('storeId', '==', activeStore.id),
-        orderBy('createdAt', 'desc'),
-      );
-      const snap = await getDocs(q);
-      setQuotations(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const { getQuotations } = await import('../services/quotationsService');
+      const response = await getQuotations(activeStore.id, cursor, PAGE_SIZE);
+      
+      setQuotations(response.data);
+      setHasMore(response.hasMore);
+      
+      if (response.hasMore && response.lastDoc) {
+        setPageCursors(prev => {
+          const newCursors = [...prev];
+          newCursors[pageIndex + 1] = response.lastDoc;
+          return newCursors;
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [activeStore]);
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const handleNextPage = () => {
+    if (hasMore) {
+      const nextCursor = pageCursors[currentPage + 1];
+      setCurrentPage(prev => prev + 1);
+      fetchQuotations(nextCursor, currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      const prevCursor = pageCursors[currentPage - 1];
+      setCurrentPage(prev => prev - 1);
+      fetchQuotations(prevCursor, currentPage - 1);
+    }
+  };
+
+  const handleRefresh = () => {
+    setPageCursors([null]);
+    setCurrentPage(0);
+    fetchQuotations(null, 0);
+  };
 
   const [downloadingId, setDownloadingId] = useState(null);
 
@@ -74,16 +112,38 @@ const QuotationsPage = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100">Quotations</h1>
-          <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
-            {quotations.length}
-          </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Quotations</h1>
+            <span className="text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full">
+              {quotations.length} total
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-1.5 mr-2">
+            <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {currentPage + 1}</span>
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 0 || loading}
+              className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={handleNextPage}
+              disabled={!hasMore || loading}
+              className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
           <button
-            onClick={loadData}
+            onClick={handleRefresh}
             disabled={loading}
             className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
             title="Refresh"
@@ -177,6 +237,7 @@ const QuotationsPage = () => {
             ))}
           </div>
         )}
+
       </div>
 
       {showModal && (
@@ -187,7 +248,7 @@ const QuotationsPage = () => {
             setShowModal(false);
             setEditingQuote(null);
           }}
-          onSaved={loadData}
+          onSaved={handleRefresh}
         />
       )}
 

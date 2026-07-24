@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import {
-  getNotifications,
+  subscribeToNotifications,
   markNotificationRead,
   markAllRead,
   deleteNotification,
@@ -17,30 +17,20 @@ export const NotificationProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user) return;
-    setLoadingNotifs(true);
-    try {
-      const data = await getNotifications(user.uid);
-      setNotifications(data);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-    } finally {
-      setLoadingNotifs(false);
-    }
-  }, [user]);
-
-  // Poll every 30 seconds for new notifications (MVP approach)
   useEffect(() => {
     if (!user) {
       setNotifications([]);
       return;
     }
-    fetchNotifications();
+    
+    setLoadingNotifs(true);
+    const unsubscribe = subscribeToNotifications(user.uid, (data) => {
+      setNotifications(data);
+      setLoadingNotifs(false);
+    });
 
-    const interval = setInterval(fetchNotifications, 30_000);
-    return () => clearInterval(interval);
-  }, [user, fetchNotifications]);
+    return () => unsubscribe();
+  }, [user]);
 
   const readOne = async (id) => {
     await markNotificationRead(id);
@@ -66,7 +56,6 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         loadingNotifs,
-        fetchNotifications,
         readOne,
         readAll,
         remove,

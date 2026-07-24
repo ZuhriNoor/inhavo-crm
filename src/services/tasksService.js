@@ -9,22 +9,33 @@ import {
   query,
   where,
   orderBy,
+  limit,
+  startAfter,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
 const TASKS_COL = 'tasks';
 
-/** Fetch all tasks for given store IDs */
-export const getTasks = async (storeIds) => {
-  if (!storeIds || storeIds.length === 0) return [];
-  const q = query(
-    collection(db, TASKS_COL),
+/** Fetch tasks for given store IDs with pagination */
+export const getTasks = async (storeIds, lastVisibleDoc = null, pageSize = 30) => {
+  if (!storeIds || storeIds.length === 0) return { data: [], lastDoc: null, hasMore: false };
+  const constraints = [
     where('storeId', 'in', storeIds),
     orderBy('deadline', 'asc'),
-  );
+    limit(pageSize)
+  ];
+  if (lastVisibleDoc) constraints.push(startAfter(lastVisibleDoc));
+
+  const q = query(collection(db, TASKS_COL), ...constraints);
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  return {
+    data,
+    lastDoc: snap.docs[snap.docs.length - 1],
+    hasMore: snap.docs.length === pageSize
+  };
 };
 
 /** Fetch tasks for a specific lead */

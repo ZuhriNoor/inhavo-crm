@@ -29,13 +29,13 @@ const DashboardPage = () => {
     if (showLoading) setLoading(true);
     if (showLoading) setError('');
     try {
-      const [stagesData, leadsData, usersData] = await Promise.all([
+      const [stagesData, leadsResponse, usersData] = await Promise.all([
         getStages(),
-        getLeads([activeStore.id]),
+        getLeads([activeStore.id], true, null, 100), // Get up to 100 leads for the Kanban board
         getUsers(),
       ]);
       setStages(stagesData);
-      setLeads(leadsData);
+      setLeads(leadsResponse.data);
       setUsers(usersData);
     } catch (err) {
       console.error(err);

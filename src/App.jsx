@@ -15,10 +15,14 @@ import LeadsPage from './pages/LeadsPage';
 import LeadDetailPage from './pages/LeadDetailPage';
 import TasksPage from './pages/TasksPage';
 import QuotationsPage from './pages/QuotationsPage';
+import SalesOrdersPage from './pages/SalesOrdersPage';
+import SalesOrderDetailPage from './pages/SalesOrderDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UsersPage from './pages/admin/UsersPage';
 import StoresPage from './pages/admin/StoresPage';
 import PipelinePage from './pages/admin/PipelinePage';
+import AdminDocketTemplatesPage from './pages/admin/AdminDocketTemplatesPage';
+import AdminWarrantyConfigPage from './pages/admin/AdminWarrantyConfigPage';
 
 import ErrorBoundary from './components/shared/ErrorBoundary';
 
@@ -71,6 +75,8 @@ const router = createBrowserRouter([
       { path: 'leads/:leadId', element: <LeadDetailPage /> },
       { path: 'tasks', element: <TasksPage /> },
       { path: 'quotations', element: <QuotationsPage /> },
+      { path: 'sales-orders', element: <SalesOrdersPage /> },
+      { path: 'sales-orders/:orderId', element: <SalesOrderDetailPage /> },
       {
         path: 'admin',
         element: <AdminRoute><AdminDashboard /></AdminRoute>,
@@ -79,6 +85,8 @@ const router = createBrowserRouter([
           { path: 'users', element: <AdminRoute><UsersPage /></AdminRoute> },
           { path: 'stores', element: <AdminRoute><StoresPage /></AdminRoute> },
           { path: 'pipeline', element: <AdminRoute><PipelinePage /></AdminRoute> },
+          { path: 'docket-templates', element: <AdminRoute><AdminDocketTemplatesPage /></AdminRoute> },
+          { path: 'warranty-config', element: <AdminRoute><AdminWarrantyConfigPage /></AdminRoute> },
         ],
       },
     ],

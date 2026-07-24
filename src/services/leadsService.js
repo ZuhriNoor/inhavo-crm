@@ -10,6 +10,8 @@ import {
   query,
   where,
   orderBy,
+  limit,
+  startAfter,
   serverTimestamp,
   runTransaction,
 } from 'firebase/firestore';
@@ -17,17 +19,30 @@ import { db } from './firebase';
 
 const LEADS_COL = 'leads';
 
-/** Fetch all leads for given store IDs */
-export const getLeads = async (storeIds, includeDeleted = false) => {
-  if (!storeIds || storeIds.length === 0) return [];
-  const q = query(
-    collection(db, LEADS_COL),
+/** Fetch leads for given store IDs with pagination */
+export const getLeads = async (storeIds, includeDeleted = false, lastVisibleDoc = null, pageSize = 30) => {
+  if (!storeIds || storeIds.length === 0) return { data: [], lastDoc: null, hasMore: false };
+  
+  const constraints = [
     where('storeId', 'in', storeIds),
     orderBy('createdAt', 'desc'),
-  );
+    limit(pageSize)
+  ];
+
+  if (lastVisibleDoc) {
+    constraints.push(startAfter(lastVisibleDoc));
+  }
+
+  const q = query(collection(db, LEADS_COL), ...constraints);
+  
   const snap = await getDocs(q);
   const leads = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return includeDeleted ? leads : leads.filter((l) => !l.deleted);
+  
+  return { 
+    data: includeDeleted ? leads : leads.filter((l) => !l.deleted), 
+    lastDoc: snap.docs[snap.docs.length - 1], 
+    hasMore: snap.docs.length === pageSize 
+  };
 };
 
 /** Fetch a single lead by ID */

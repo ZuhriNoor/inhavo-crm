@@ -78,6 +78,44 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Sales Orders — scoped to store assignment
+    match /salesOrders/{orderId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in getUserData().assignedStores);
+      allow update: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow delete: if isAdmin();
+    }
+
+    // Dockets — scoped to store assignment
+    match /dockets/{docketId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in getUserData().assignedStores);
+      allow update: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow delete: if isAdmin();
+    }
+
+    // Warranties — scoped to store assignment
+    match /warranties/{warrantyId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow create: if isAuthenticated(); // Allow creation, scoped to user actions
+      allow update: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in getUserData().assignedStores);
+      allow delete: if isAdmin();
+    }
+
+    // Docket Templates — globally readable, admin writable
+    match /docketTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     // Notifications — users can only read/write their own
     match /notifications/{notifId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
@@ -89,6 +127,12 @@ service cloud.firestore {
     match /counters/{counterId} {
       // Anyone who can create a quotation needs to read/write the counter
       allow read, write: if isAuthenticated();
+    }
+
+    // Settings — globally readable, admin writable
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

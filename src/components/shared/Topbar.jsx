@@ -74,25 +74,6 @@ const Topbar = ({ onMenuClick }) => {
         <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">{breadcrumb}</p>
       </div>
 
-      {/* Search */}
-      <div className="relative hidden sm:flex items-center">
-        <Search size={15} className="absolute left-3 text-gray-400 dark:text-slate-500" />
-        <input
-          type="text"
-          placeholder="Search leads…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 pr-4 py-1.5 text-sm bg-gray-100 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 dark:focus:border-purple-400 w-56 transition-all"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch('')}
-            className="absolute right-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
-          >
-            <X size={13} />
-          </button>
-        )}
-      </div>
 
       {/* Theme Toggle */}
       <div className="relative" ref={themeRef}>
