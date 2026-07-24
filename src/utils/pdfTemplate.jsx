@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   termsText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#374151',
     lineHeight: 1.4,
   },
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   footerText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#374151',
     lineHeight: 1.4,
   },

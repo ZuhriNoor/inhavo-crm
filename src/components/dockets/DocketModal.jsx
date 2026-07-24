@@ -5,6 +5,7 @@ import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocketPDF } from '../../utils/docketPdfTemplate';
 import LoadingScreen from '../shared/LoadingScreen';
 import { compressImageFile } from '../../utils/imageUtils';
+import { useStore } from '../../contexts/StoreContext';
 
 export default function DocketModal({ isOpen, onClose, saleOrder, item, existingDocket, onDocketCreated }) {
   const [templates, setTemplates] = useState([]);
@@ -27,6 +28,9 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   const [loading, setLoading] = useState(false);
   const [savedDocket, setSavedDocket] = useState(null);
   const [previewPayload, setPreviewPayload] = useState(null);
+  const { availableStores } = useStore();
+
+  const currentStore = availableStores.find(s => s.id === saleOrder?.storeId);
 
   useEffect(() => {
     if (isOpen) {
@@ -107,7 +111,9 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
           };
         }),
       extraImageUrls: additionalFiles.filter(f => !f.type.toLowerCase().includes('pdf') && !f.name.toLowerCase().endsWith('.pdf')).map(f => URL.createObjectURL(f)),
-      docketNumber: existingDocket ? existingDocket.docketNumber : 'PREVIEW'
+      extraPdfCount: additionalFiles.filter(f => f.type.toLowerCase().includes('pdf') || f.name.toLowerCase().endsWith('.pdf')).length,
+      docketNumber: existingDocket ? existingDocket.docketNumber : 'PREVIEW',
+      storeAddress: currentStore?.address || ''
     };
   };
 

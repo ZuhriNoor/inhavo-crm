@@ -31,7 +31,7 @@ const DashboardPage = () => {
     try {
       const [stagesData, leadsResponse, usersData] = await Promise.all([
         getStages(),
-        getLeads([activeStore.id], true, null, 100), // Get up to 100 leads for the Kanban board
+        getLeads([activeStore.id], false, null, 100), // Get up to 100 leads for the Kanban board
         getUsers(),
       ]);
       setStages(stagesData);

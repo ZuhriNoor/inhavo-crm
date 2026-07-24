@@ -4,8 +4,11 @@ const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: 'Helvetica', backgroundColor: '#ffffff', color: '#1f2937' },
   
   // Header
-  logoImage: { width: 140, alignSelf: 'center', marginBottom: 10 },
-  title: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#8B4513', textAlign: 'center', marginBottom: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2 solid #875a7b', paddingBottom: 20, marginBottom: 20 },
+  logo: { width: 140, objectFit: 'contain' },
+  storeAddress: { fontSize: 9, color: '#64748b', textAlign: 'right', width: 200, lineHeight: 1.3 },
+  titleBox: { alignItems: 'flex-start' },
+  title: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#8B4513', marginTop: 15 },
   
   // Header Info
   infoBlock: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
@@ -39,9 +42,18 @@ export const WarrantyPDF = ({ warranty }) => {
     <Document title={`Warranty Certificate - ${warranty.warrantyNumber}`}>
       <Page size="A4" style={styles.page}>
         
-        {/* Top Centered Header */}
-        <Image style={styles.logoImage} src="/inhavo-logo-quotation-top.png" />
-        <Text style={styles.title}>CERTIFICATE OF WARRANTY</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.titleBox}>
+            <Image src="/inhavo-logo-quotation-top.png" style={styles.logo} />
+            <Text style={styles.title}>CERTIFICATE OF WARRANTY</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+            {warranty.storeAddress && (
+              <Text style={styles.storeAddress}>{warranty.storeAddress}</Text>
+            )}
+          </View>
+        </View>
 
         {/* Customer & Order Details */}
         <View style={styles.infoBlock}>

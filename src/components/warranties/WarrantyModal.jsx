@@ -3,6 +3,7 @@ import { X, Save, FileText, CheckCircle, RefreshCw } from 'lucide-react';
 import { createWarranty, getWarrantySettings } from '../../services/warrantiesService';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { WarrantyPDF } from '../../utils/warrantyPdfTemplate';
+import { useStore } from '../../contexts/StoreContext';
 
 export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCreated }) {
   const [items, setItems] = useState([]);
@@ -10,6 +11,9 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedWarranty, setSavedWarranty] = useState(null);
+  const { availableStores } = useStore();
+
+  const currentStore = availableStores.find(s => s.id === saleOrder?.storeId);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,7 +57,8 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
         salesOrderNumber: saleOrder.salesOrderNumber,
         customerDetails: saleOrder.customerDetails,
         items: items, // Contains name, qty, unitPrice, description, warrantyDescription
-        termsText: termsText
+        termsText: termsText,
+        storeAddress: currentStore?.address || ''
       };
       
       const result = await createWarranty(warrantyData);

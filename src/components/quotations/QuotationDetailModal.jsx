@@ -75,8 +75,9 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
           {/* Line Items */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">Products & Services</h3>
-            <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[480px]">
+            {/* Desktop Table View */}
+            <div className="hidden sm:block border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-slate-700/60 text-gray-500 dark:text-slate-300 text-xs uppercase">
                   <tr>
                     <th className="px-4 py-3 font-medium">Item</th>
@@ -109,6 +110,32 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="sm:hidden space-y-3">
+              {quotation.items?.map((item, idx) => {
+                const rowTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+                return (
+                  <div key={idx} className="bg-gray-50 dark:bg-slate-700/30 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex gap-3">
+                    {item.photo && (
+                      <img src={item.photo} alt={item.name} className="w-16 h-16 rounded border border-gray-200 dark:border-slate-600 object-cover shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-800 dark:text-slate-100 leading-tight">{item.name}</p>
+                      {item.description && <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 line-clamp-2">{item.description}</p>}
+                      <div className="flex justify-between items-end mt-2">
+                        <div className="text-xs text-gray-500 dark:text-slate-400">
+                          {item.qty} × ₹{(Number(item.unitPrice) || 0).toLocaleString('en-IN')}
+                        </div>
+                        <div className="font-medium text-gray-800 dark:text-slate-100">
+                          ₹{rowTotal.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             
             <div className="flex justify-end mt-4 px-2">

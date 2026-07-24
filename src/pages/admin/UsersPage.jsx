@@ -94,8 +94,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md max-h-[95vh] md:max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit User' : 'New User'}
           </h2>
@@ -104,8 +104,9 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
-          <div>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+            <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Display Name *</label>
             <input
               {...register('displayName', { required: 'Name is required' })}
@@ -191,8 +192,10 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
               )}
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2 pt-1">
+
+          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
               Cancel
             </button>
