@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Save, FileText, CheckCircle, RefreshCw } from 'lucide-react';
-import { createWarranty, getWarrantySettings } from '../../services/warrantiesService';
+import { createWarranty, updateWarranty, getWarrantySettings } from '../../services/warrantiesService';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { WarrantyPDF } from '../../utils/warrantyPdfTemplate';
 import { useStore } from '../../contexts/StoreContext';
 
-export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCreated }) {
+export default function WarrantyModal({ isOpen, onClose, saleOrder, existingWarranty = null, onWarrantyCreated }) {
   const [items, setItems] = useState([]);
   const [termsText, setTermsText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -17,13 +17,26 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
 
   useEffect(() => {
     if (isOpen) {
-      fetchSettings();
-      // Initialize items from sale order with an empty warranty description
-      if (saleOrder?.items) {
-        setItems(saleOrder.items.map(item => ({ ...item, warrantyDescription: '' })));
+      setSavedWarranty(null);
+      if (existingWarranty) {
+        setLoading(false);
+        setTermsText(existingWarranty.termsText || '');
+        if (existingWarranty.items) {
+          setItems(existingWarranty.items.map(item => ({
+            ...item,
+            warrantyDescription: item.warrantyDescription || ''
+          })));
+        } else if (saleOrder?.items) {
+          setItems(saleOrder.items.map(item => ({ ...item, warrantyDescription: '' })));
+        }
+      } else {
+        fetchSettings();
+        if (saleOrder?.items) {
+          setItems(saleOrder.items.map(item => ({ ...item, warrantyDescription: '' })));
+        }
       }
     }
-  }, [isOpen, saleOrder]);
+  }, [isOpen, saleOrder, existingWarranty]);
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -61,11 +74,20 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
         storeAddress: currentStore?.address || ''
       };
       
-      const result = await createWarranty(warrantyData);
+      let result;
+      if (existingWarranty) {
+        result = await updateWarranty(existingWarranty.id, {
+          ...existingWarranty,
+          ...warrantyData
+        });
+      } else {
+        result = await createWarranty(warrantyData);
+      }
+
       setSavedWarranty({ ...warrantyData, ...result });
       if (onWarrantyCreated) onWarrantyCreated();
     } catch (error) {
-      console.error('Error creating warranty:', error);
+      console.error('Error saving warranty:', error);
     } finally {
       setSaving(false);
     }
@@ -77,10 +99,12 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Generate Warranty Certificate</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              {existingWarranty ? 'Edit Warranty Certificate' : 'Generate Warranty Certificate'}
+            </h2>
             <p className="text-sm text-gray-500 dark:text-slate-400">SO: {saleOrder?.salesOrderNumber}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -149,7 +173,9 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
               <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle size={32} className="text-emerald-600 dark:text-emerald-400" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Warranty Created!</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">
+                {existingWarranty ? 'Warranty Updated!' : 'Warranty Created!'}
+              </h3>
               <p className="text-gray-500 dark:text-slate-400 mb-6">Certificate #{savedWarranty.warrantyNumber} generated.</p>
               
               <PDFDownloadLink
@@ -167,17 +193,18 @@ export default function WarrantyModal({ isOpen, onClose, saleOrder, onWarrantyCr
         {/* Footer */}
         {!savedWarranty && !loading && (
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
               className="px-6 py-2 text-sm font-medium text-white rounded-lg flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-colors"
               style={{ background: '#875a7b' }}
             >
               {saving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-              {saving ? 'Generating...' : 'Generate Warranty'}
+              {saving ? (existingWarranty ? 'Updating...' : 'Generating...') : (existingWarranty ? 'Update Warranty' : 'Generate Warranty')}
             </button>
           </div>
         )}

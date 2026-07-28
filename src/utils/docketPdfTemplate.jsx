@@ -39,6 +39,11 @@ export const DocketPDF = ({ docket, template }) => {
             <Text style={{ fontSize: 10, color: '#475569' }}>
               Docket No: {docket.docketNumber} | SO: {docket.salesOrderNumber} | Category: {template?.name || docket.templateName}
             </Text>
+            {docket.deliveryDate && (
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginTop: 3 }}>
+                Target Delivery Date: {docket.deliveryDate}
+              </Text>
+            )}
           </View>
           <Image src="/inhavo-logo-quotation-top.png" style={styles.logo} />
         </View>
@@ -60,13 +65,12 @@ export const DocketPDF = ({ docket, template }) => {
           <View style={{ flex: 1 }}>
             <Text style={styles.fieldLabel}>Product Details</Text>
             <Text style={styles.fieldValue}>{docket.productDetails?.name}</Text>
-            <Text style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>Qty: {docket.productDetails?.qty}</Text>
+            <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginTop: 3 }}>Qty: {docket.productDetails?.qty}</Text>
           </View>
           <View style={{ flex: 1, borderLeft: '1 solid #cbd5e1', paddingLeft: 15 }}>
              <Text style={styles.fieldLabel}>Customer Info</Text>
              <Text style={styles.fieldValue}>{docket.customerDetails?.name || 'N/A'}</Text>
-             <Text style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>{docket.customerDetails?.phone || 'N/A'}</Text>
-             <Text style={{ fontSize: 9, color: '#475569' }}>{docket.customerDetails?.address || 'N/A'}</Text>
+             <Text style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>{docket.customerDetails?.address || 'N/A'}</Text>
           </View>
         </View>
 
@@ -90,8 +94,10 @@ export const DocketPDF = ({ docket, template }) => {
         <Page key={`chunk-${chunkIdx}`} size="A4" style={styles.page}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.docketTitle}>SPECIFICATIONS - PAGE {chunkIdx + 1}</Text>
-              <Text style={{ fontSize: 10, color: '#475569' }}>Docket No: {docket.docketNumber}</Text>
+              <Text style={styles.docketTitle}>SPECIFICATIONS</Text>
+              <Text style={{ fontSize: 10, color: '#475569' }}>
+                Docket No: {docket.docketNumber} {docket.deliveryDate ? `| Delivery: ${docket.deliveryDate}` : ''}
+              </Text>
             </View>
             <Image src="/inhavo-logo-quotation-top.png" style={styles.logo} />
           </View>
@@ -138,7 +144,7 @@ export const DocketPDF = ({ docket, template }) => {
         <Page key={`extra-img-${idx}`} size="A4" style={styles.page}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.docketTitle}>ATTACHMENT - PAGE {idx + 1}</Text>
+              <Text style={styles.docketTitle}>ATTACHMENT</Text>
               <Text style={{ fontSize: 10, color: '#475569' }}>Docket No: {docket.docketNumber}</Text>
             </View>
             <Image src="/inhavo-logo-quotation-top.png" style={styles.logo} />
@@ -157,28 +163,6 @@ export const DocketPDF = ({ docket, template }) => {
           )} fixed />
         </Page>
       ))}
-      {/* Notice for PDF Attachments */}
-      {docket.extraPdfCount > 0 && (
-        <Page size="A4" style={[styles.page, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={{ fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginBottom: 15 }}>
-            Additional Attachments
-          </Text>
-          <Text style={{ fontSize: 12, color: '#475569', textAlign: 'center' }}>
-            {docket.extraPdfCount} additional PDF document(s) {docket.extraPdfCount === 1 ? 'is' : 'are'} merged at the end of this docket.
-          </Text>
-
-          {/* Store Address Footer */}
-          {docket.storeAddress && (
-            <Text style={{ position: 'absolute', bottom: 20, left: 30, textAlign: 'left', fontSize: 9, color: '#94a3b8' }} fixed>
-              {docket.storeAddress}
-            </Text>
-          )}
-
-          <Text style={{ position: 'absolute', bottom: 20, right: 30, fontSize: 12, color: '#000000', fontFamily: 'Helvetica-Bold' }} render={({ pageNumber, totalPages }) => (
-            `Page ${pageNumber} of ${totalPages}`
-          )} fixed />
-        </Page>
-      )}
     </Document>
   );
 };

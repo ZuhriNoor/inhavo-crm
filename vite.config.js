@@ -5,13 +5,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    global: 'window',
+  },
   plugins: [
     tailwindcss(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true,
+        enabled: false,
         suppressWarnings: true
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'logo-inhavo.png', 'pwa-192x192.png', 'pwa-512x512.png'],

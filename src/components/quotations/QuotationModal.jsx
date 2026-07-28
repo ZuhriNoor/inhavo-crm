@@ -70,40 +70,19 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
   const items = watch('items');
   const extraCosts = watch('extraCosts');
 
-  const handlePhotoChange = (idx, e) => {
+  const handlePhotoChange = async (idx, e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400;
-          const MAX_HEIGHT = 400;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-          setValue(`items.${idx}.photo`, dataUrl);
+      try {
+        const compressed = await compressImageFile(file, 400, 400, 0.6);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setValue(`items.${idx}.photo`, reader.result);
         };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(compressed);
+      } catch (err) {
+        console.error('Error compressing image:', err);
+      }
     }
   };
 

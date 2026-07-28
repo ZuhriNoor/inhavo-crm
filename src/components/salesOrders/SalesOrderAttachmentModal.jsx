@@ -27,12 +27,14 @@ const SalesOrderAttachmentModal = ({ orderId, isOpen, onClose, onUploaded }) => 
     setError('');
 
     if (selectedFile.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(selectedFile);
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(URL.createObjectURL(selectedFile));
     } else {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
       setPreviewUrl(null);
     }
   };

@@ -58,6 +58,32 @@ export const updateSaleOrderStatus = async (id, status) => {
   });
 };
 
+/** Update full sales order details */
+export const updateSaleOrder = async (id, orderData) => {
+  const docRef = doc(db, SALES_ORDERS_COL, id);
+  const productsTotal = (orderData.items || []).reduce(
+    (acc, curr) => acc + (Number(curr.qty) || 0) * (Number(curr.unitPrice) || 0),
+    0
+  );
+  const extraCostsTotal = (orderData.extraCosts || []).reduce(
+    (acc, curr) => acc + (Number(curr.amount) || 0),
+    0
+  );
+  const grandTotal = productsTotal + extraCostsTotal;
+
+  const updatedPayload = {
+    ...orderData,
+    productsTotal,
+    extraCostsTotal,
+    grandTotal,
+    totalAmount: grandTotal,
+    updatedAt: serverTimestamp(),
+  };
+
+  await updateDoc(docRef, updatedPayload);
+  return { id, ...updatedPayload };
+};
+
 /** Upload Attachment (Proof, Screenshot, Document) to Sales Order */
 export const uploadSalesOrderAttachment = async (orderId, file, name = '') => {
   if (!orderId || !file) throw new Error('Order ID and file are required');

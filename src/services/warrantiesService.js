@@ -55,6 +55,15 @@ export const createWarranty = async (warrantyData) => {
   });
 };
 
+export const updateWarranty = async (id, warrantyData) => {
+  const docRef = doc(db, WARRANTIES_COL, id);
+  await setDoc(docRef, {
+    ...warrantyData,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+  return { id, ...warrantyData };
+};
+
 export const getWarrantySettings = async () => {
   try {
     const docRef = doc(db, 'settings', 'warrantySettings');

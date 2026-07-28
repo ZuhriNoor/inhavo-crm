@@ -15,6 +15,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   
   // General Info
   const [generalDescription, setGeneralDescription] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
   const [generalImageFile, setGeneralImageFile] = useState(null);
   const [existingGeneralImageUrl, setExistingGeneralImageUrl] = useState(null);
   
@@ -25,6 +26,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   // Extra Attachments
   const [additionalFiles, setAdditionalFiles] = useState([]); // Array of File objects
   const [existingExtraImageUrls, setExistingExtraImageUrls] = useState([]);
+  const [existingExtraPdfUrls, setExistingExtraPdfUrls] = useState([]);
   
   const [step, setStep] = useState(1); // 1 = Draft, 2 = Confirm
   const [loading, setLoading] = useState(false);
@@ -50,8 +52,10 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
         const tpl = data.find(t => t.id === existingDocket.templateId) || data[0];
         setSelectedTemplate(tpl);
         setGeneralDescription(existingDocket.generalDescription || '');
+        setDeliveryDate(existingDocket.deliveryDate || saleOrder?.deliveryDate || '');
         setExistingGeneralImageUrl(existingDocket.generalImageUrl || null);
         setExistingExtraImageUrls(existingDocket.extraImageUrls || []);
+        setExistingExtraPdfUrls(existingDocket.extraPdfUrls || []);
         
         const selFields = {};
         const fData = {};
@@ -69,6 +73,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
         setFieldData(fData);
       } else if (data.length > 0) {
         setSelectedTemplate(data[0]);
+        setDeliveryDate(saleOrder?.deliveryDate || '');
       }
     } catch (err) {
       console.error(err);
@@ -132,6 +137,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
       ],
       extraPdfCount: additionalFiles.filter(f => f.type?.toLowerCase().includes('pdf') || f.name?.toLowerCase().endsWith('.pdf')).length,
       docketNumber: existingDocket ? existingDocket.docketNumber : 'PREVIEW',
+      deliveryDate: deliveryDate || '',
       storeAddress: currentStore?.address || ''
     };
   };
@@ -177,6 +183,8 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
     try {
       const payload = {
         ...previewPayload,
+        existingExtraImageUrls,
+        existingExtraPdfUrls,
         additionalFiles
       };
       
@@ -249,10 +257,19 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                 </div>
               </div>
 
-              {/* General Specs */}
+              {/* General Specs & Delivery Date */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 border-b border-gray-100 dark:border-slate-700 pb-2">General Description & Reference</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Target Delivery Date</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:border-purple-500 text-sm text-gray-900 dark:text-slate-100 transition-colors"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Description & Specifications (Width, Height, etc.)</label>
                     <textarea
@@ -376,10 +393,10 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                       }} />
                   </label>
                   
-                  {(existingExtraImageUrls.length > 0 || additionalFiles.length > 0) && (
+                  {(existingExtraImageUrls.length > 0 || existingExtraPdfUrls.length > 0 || additionalFiles.length > 0) && (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {existingExtraImageUrls.map((url, i) => (
-                        <div key={`existing-extra-${i}`} className="flex items-center justify-between p-2 bg-purple-50/50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <div key={`existing-extra-img-${i}`} className="flex items-center justify-between p-2 bg-purple-50/50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
                           <div className="flex items-center gap-2 overflow-hidden">
                             <ImageIcon size={16} className="text-purple-600 shrink-0" />
                             <span className="text-xs text-purple-900 dark:text-purple-200 truncate">Saved Image #{i + 1}</span>
@@ -389,6 +406,23 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                           </button>
                         </div>
                       ))}
+                      {existingExtraPdfUrls.map((item, i) => {
+                        const name = typeof item === 'object' ? item.name : `Saved PDF #${i + 1}`;
+                        const url = typeof item === 'object' ? item.url : item;
+                        return (
+                          <div key={`existing-extra-pdf-${i}`} className="flex items-center justify-between p-2 bg-red-50/50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <FileText size={16} className="text-red-600 shrink-0" />
+                              <a href={url} target="_blank" rel="noreferrer" className="text-xs text-red-900 dark:text-red-200 truncate hover:underline" title="Open saved PDF">
+                                {name}
+                              </a>
+                            </div>
+                            <button type="button" onClick={() => setExistingExtraPdfUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
                       {additionalFiles.map((file, i) => (
                         <div key={`new-extra-${i}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
                           <div className="flex items-center gap-2 overflow-hidden">

@@ -14,10 +14,49 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { pdf } from '@react-pdf/renderer';
 import { DocketPDF } from '../utils/docketPdfTemplate';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import React from 'react';
 import { compressImage } from '../utils/imageCompression';
-import { loadRemoteImageAsDataUrl } from '../utils/imageUtils';
+import { loadRemoteImageAsDataUrl, toProxiedUrl } from '../utils/imageUtils';
+
+// Helper to stamp continuous page numbers ("Page X of Y") over all pages of merged PDF
+const applyContinuousPageNumbers = async (pdfDoc) => {
+  const totalPages = pdfDoc.getPageCount();
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  for (let i = 0; i < totalPages; i++) {
+    const page = pdfDoc.getPage(i);
+    const { width } = page.getSize();
+    const pageText = `Page ${i + 1} of ${totalPages}`;
+    const fontSize = 12;
+    const textWidth = fontBold.widthOfTextAtSize(pageText, fontSize);
+
+    const marginRight = 30;
+    const marginBottom = 18;
+    const xPos = width - textWidth - marginRight;
+    const yPos = marginBottom;
+
+    // Solid white mask to cover existing page numbers / background content cleanly
+    page.drawRectangle({
+      x: xPos - 6,
+      y: yPos - 4,
+      width: textWidth + 12,
+      height: fontSize + 8,
+      color: rgb(1, 1, 1),
+    });
+
+    // Stamp continuous page number
+    page.drawText(pageText, {
+      x: xPos,
+      y: yPos,
+      size: fontSize,
+      font: fontBold,
+      color: rgb(0, 0, 0),
+    });
+  }
+
+  return await pdfDoc.save();
+};
 
 const DOCKETS_COL = 'dockets';
 const TEMPLATES_COL = 'docketTemplates';
@@ -37,7 +76,7 @@ const uploadFile = async (file, path, compress = false) => {
   if (!file) return null;
   
   let fileToUpload = file;
-  if (compress && file.type.startsWith('image/')) {
+  if (compress && file.type?.startsWith('image/')) {
     try {
       fileToUpload = await compressImage(file);
     } catch (err) {
@@ -50,7 +89,7 @@ const uploadFile = async (file, path, compress = false) => {
   return await getDownloadURL(fileRef);
 };
 
-// Helper for processing and uploading docket images to Firebase Storage
+// Helper for processing and uploading docket images & PDFs to Firebase Storage
 const processDocketImages = async (docketData, docketNumber, timestamp) => {
   let generalImageUrl = docketData.generalImageUrl || null;
 
@@ -106,8 +145,10 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
     })
   );
 
-  // 3. Additional Images from additionalFiles
+  // 3. Additional Images & PDFs from additionalFiles
   const extraImageUrls = [];
+  const extraPdfUrls = [];
+
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
       const file = docketData.additionalFiles[i];
@@ -119,11 +160,20 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
           true
         );
         if (uploadedUrl) extraImageUrls.push(uploadedUrl);
+      } else if (isPdf) {
+        const uploadedUrl = await uploadFile(
+          file,
+          `dockets/pdfs/${docketNumber}/extra_pdf_${i}_${timestamp}.pdf`,
+          false
+        );
+        if (uploadedUrl) {
+          extraPdfUrls.push({ name: file.name, url: uploadedUrl });
+        }
       }
     }
   }
 
-  // Keep existing remote extraImageUrls if editing
+  // Preserve existing remote extraImageUrls if editing
   if (docketData.extraImageUrls) {
     for (const url of docketData.extraImageUrls) {
       if (url && !url.startsWith('blob:')) {
@@ -132,10 +182,24 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
     }
   }
 
+  // Preserve existing remote extraPdfUrls if editing
+  if (docketData.existingExtraPdfUrls) {
+    for (const item of docketData.existingExtraPdfUrls) {
+      if (item) {
+        if (typeof item === 'string' && !item.startsWith('blob:')) {
+          extraPdfUrls.push({ name: 'Attachment.pdf', url: item });
+        } else if (typeof item === 'object' && item.url && !item.url.startsWith('blob:')) {
+          extraPdfUrls.push(item);
+        }
+      }
+    }
+  }
+
   return {
     generalImageUrl: generalImageUrl && !generalImageUrl.startsWith('blob:') ? generalImageUrl : null,
     dynamicFields,
     extraImageUrls,
+    extraPdfUrls,
   };
 };
 
@@ -185,20 +249,20 @@ export const createDocket = async (docketData) => {
   const { docketNumber } = docketNumData;
   const timestamp = Date.now();
 
-  // 1. Upload images to Firebase Storage
-  const { generalImageUrl, dynamicFields, extraImageUrls } = await processDocketImages(
+  // 1. Upload images & extra PDFs to Firebase Storage
+  const { generalImageUrl, dynamicFields, extraImageUrls, extraPdfUrls } = await processDocketImages(
     docketData,
     docketNumber,
     timestamp
   );
 
-  // 2. Separate Extra PDFs
-  const extraPdfs = [];
+  // Separate newly added local PDF files
+  const localExtraPdfs = [];
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
       const file = docketData.additionalFiles[i];
       if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
-        extraPdfs.push(file);
+        localExtraPdfs.push(file);
       }
     }
   }
@@ -212,45 +276,69 @@ export const createDocket = async (docketData) => {
     templateId: docketData.templateId,
     templateName: docketData.templateName,
     generalDescription: docketData.generalDescription,
+    deliveryDate: docketData.deliveryDate || '',
     storeAddress: docketData.storeAddress || '',
     generalImageUrl,
     dynamicFields,
     extraImageUrls,
-    extraPdfCount: extraPdfs.length,
+    extraPdfUrls,
     docketNumber,
     productionStatus: 'Pending',
     createdAt: serverTimestamp(),
   };
 
-  // 3. Generate the base PDF using @react-pdf/renderer
+  // 2. Generate the base PDF using @react-pdf/renderer
   const pdfDocket = await prepareDocketForPdf(finalDocket);
   const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: pdfDocket })).toBlob();
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
-  // 4. Merge with extra PDFs using pdf-lib
-  let finalPdfBytes;
-  if (extraPdfs.length > 0) {
-    const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
-    for (const extraPdfFile of extraPdfs) {
-      try {
-        const extraPdfBuffer = await extraPdfFile.arrayBuffer();
-        const extraPdf = await PDFDocument.load(extraPdfBuffer, { ignoreEncryption: true });
-        const copiedPages = await mergedPdf.copyPages(extraPdf, extraPdf.getPageIndices());
-        copiedPages.forEach(page => mergedPdf.addPage(page));
-      } catch (err) {
-        console.error('Failed to merge extra PDF:', extraPdfFile.name, err);
+  // 3. Load PDF ArrayBuffers for all extra PDFs (newly added local files + existing remote PDF URLs)
+  const extraPdfBuffers = [];
+  for (const file of localExtraPdfs) {
+    try {
+      const buf = await file.arrayBuffer();
+      extraPdfBuffers.push(buf);
+    } catch (err) {
+      console.error('Failed to read local PDF buffer:', file.name, err);
+    }
+  }
+
+  if (docketData.existingExtraPdfUrls) {
+    for (const item of docketData.existingExtraPdfUrls) {
+      const url = typeof item === 'object' ? item.url : item;
+      if (url && !url.startsWith('blob:')) {
+        try {
+          const fetchUrl = toProxiedUrl(url);
+          const res = await fetch(fetchUrl);
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            extraPdfBuffers.push(buf);
+          }
+        } catch (err) {
+          console.error('Failed to download existing extra PDF from Storage:', url, err);
+        }
       }
     }
-    finalPdfBytes = await mergedPdf.save();
-  } else {
-    finalPdfBytes = basePdfArrayBuffer;
   }
+
+  // 4. Merge all PDF buffers into base PDF
+  const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
+  for (const pdfBuf of extraPdfBuffers) {
+    try {
+      const extraPdfDoc = await PDFDocument.load(pdfBuf, { ignoreEncryption: true });
+      const copiedPages = await mergedPdf.copyPages(extraPdfDoc, extraPdfDoc.getPageIndices());
+      copiedPages.forEach(page => mergedPdf.addPage(page));
+    } catch (err) {
+      console.error('Failed to merge extra PDF buffer:', err);
+    }
+  }
+  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf);
 
   // 5. Upload final PDF to Firebase Storage
   const pdfBlobToUpload = new Blob([finalPdfBytes], { type: 'application/pdf' });
   const finalPdfUrl = await uploadFile(pdfBlobToUpload, `dockets/pdfs/${docketNumber}-${timestamp}.pdf`);
   
-  // 6. Save docket object with images and PDF URL to Firestore
+  // 6. Save docket object with images, PDF attachments, and PDF URL to Firestore
   const firestoreDocket = { ...finalDocket, pdfUrl: finalPdfUrl };
   const newDocketRef = await addDoc(collection(db, DOCKETS_COL), firestoreDocket);
   
@@ -268,18 +356,18 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const { docketNumber } = docketData;
   const timestamp = Date.now();
 
-  const { generalImageUrl, dynamicFields, extraImageUrls } = await processDocketImages(
+  const { generalImageUrl, dynamicFields, extraImageUrls, extraPdfUrls } = await processDocketImages(
     docketData,
     docketNumber,
     timestamp
   );
 
-  const extraPdfs = [];
+  const localExtraPdfs = [];
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
       const file = docketData.additionalFiles[i];
       if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
-        extraPdfs.push(file);
+        localExtraPdfs.push(file);
       }
     }
   }
@@ -292,11 +380,12 @@ export const updateDocketWithFiles = async (id, docketData) => {
     templateId: docketData.templateId,
     templateName: docketData.templateName,
     generalDescription: docketData.generalDescription,
+    deliveryDate: docketData.deliveryDate || '',
     storeAddress: docketData.storeAddress || '',
     generalImageUrl,
     dynamicFields,
     extraImageUrls,
-    extraPdfCount: extraPdfs.length,
+    extraPdfUrls,
     docketNumber,
     productionStatus: docketData.productionStatus || 'Pending',
     updatedAt: serverTimestamp(),
@@ -306,23 +395,45 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: pdfDocket })).toBlob();
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
-  let finalPdfBytes;
-  if (extraPdfs.length > 0) {
-    const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
-    for (const extraPdfFile of extraPdfs) {
-      try {
-        const extraPdfBuffer = await extraPdfFile.arrayBuffer();
-        const extraPdf = await PDFDocument.load(extraPdfBuffer, { ignoreEncryption: true });
-        const copiedPages = await mergedPdf.copyPages(extraPdf, extraPdf.getPageIndices());
-        copiedPages.forEach(page => mergedPdf.addPage(page));
-      } catch (err) {
-        console.error('Failed to merge extra PDF:', extraPdfFile.name, err);
+  const extraPdfBuffers = [];
+  for (const file of localExtraPdfs) {
+    try {
+      const buf = await file.arrayBuffer();
+      extraPdfBuffers.push(buf);
+    } catch (err) {
+      console.error('Failed to read local PDF buffer:', file.name, err);
+    }
+  }
+
+  if (docketData.existingExtraPdfUrls) {
+    for (const item of docketData.existingExtraPdfUrls) {
+      const url = typeof item === 'object' ? item.url : item;
+      if (url && !url.startsWith('blob:')) {
+        try {
+          const fetchUrl = toProxiedUrl(url);
+          const res = await fetch(fetchUrl);
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            extraPdfBuffers.push(buf);
+          }
+        } catch (err) {
+          console.error('Failed to download existing extra PDF from Storage:', url, err);
+        }
       }
     }
-    finalPdfBytes = await mergedPdf.save();
-  } else {
-    finalPdfBytes = basePdfArrayBuffer;
   }
+
+  const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
+  for (const pdfBuf of extraPdfBuffers) {
+    try {
+      const extraPdfDoc = await PDFDocument.load(pdfBuf, { ignoreEncryption: true });
+      const copiedPages = await mergedPdf.copyPages(extraPdfDoc, extraPdfDoc.getPageIndices());
+      copiedPages.forEach(page => mergedPdf.addPage(page));
+    } catch (err) {
+      console.error('Failed to merge extra PDF buffer:', err);
+    }
+  }
+  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf);
 
   const pdfBlobToUpload = new Blob([finalPdfBytes], { type: 'application/pdf' });
   const finalPdfUrl = await uploadFile(pdfBlobToUpload, `dockets/pdfs/${docketNumber}-${timestamp}.pdf`);

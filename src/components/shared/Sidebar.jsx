@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Building2,
   Shield,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStore } from '../../contexts/StoreContext';
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/quotations', label: 'Quotations', icon: FileText },
   { to: '/sales-orders', label: 'Sales Orders', icon: Store },
+  { to: '/purchase-orders', label: 'Purchase Orders', icon: Truck },
 ];
 
 const ADMIN_ITEMS = [

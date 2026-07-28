@@ -119,5 +119,22 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    // Vendors — readable by authenticated users, writable by admins
+    match /vendors/{vendorId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Purchase Orders — scoped to store assignment
+    match /purchaseOrders/{poId} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in request.auth.token.stores);
+      allow create: if isAuthenticated() &&
+        (isAdmin() || request.resource.data.storeId in request.auth.token.stores);
+      allow update: if isAuthenticated() &&
+        (isAdmin() || resource.data.storeId in request.auth.token.stores);
+      allow delete: if isAdmin();
+    }
   }
 }

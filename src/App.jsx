@@ -17,12 +17,14 @@ import TasksPage from './pages/TasksPage';
 import QuotationsPage from './pages/QuotationsPage';
 import SalesOrdersPage from './pages/SalesOrdersPage';
 import SalesOrderDetailPage from './pages/SalesOrderDetailPage';
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UsersPage from './pages/admin/UsersPage';
 import StoresPage from './pages/admin/StoresPage';
 import PipelinePage from './pages/admin/PipelinePage';
 import AdminDocketTemplatesPage from './pages/admin/AdminDocketTemplatesPage';
 import AdminWarrantyConfigPage from './pages/admin/AdminWarrantyConfigPage';
+import AdminVendorsPage from './pages/admin/AdminVendorsPage';
 
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import PWAUpdatePrompt from './components/shared/PWAUpdatePrompt';
@@ -78,6 +80,7 @@ const router = createBrowserRouter([
       { path: 'quotations', element: <QuotationsPage /> },
       { path: 'sales-orders', element: <SalesOrdersPage /> },
       { path: 'sales-orders/:orderId', element: <SalesOrderDetailPage /> },
+      { path: 'purchase-orders', element: <PurchaseOrdersPage /> },
       {
         path: 'admin',
         element: <AdminRoute><AdminDashboard /></AdminRoute>,
@@ -88,6 +91,7 @@ const router = createBrowserRouter([
           { path: 'pipeline', element: <AdminRoute><PipelinePage /></AdminRoute> },
           { path: 'docket-templates', element: <AdminRoute><AdminDocketTemplatesPage /></AdminRoute> },
           { path: 'warranty-config', element: <AdminRoute><AdminWarrantyConfigPage /></AdminRoute> },
+          { path: 'vendors', element: <AdminRoute><AdminVendorsPage /></AdminRoute> },
         ],
       },
     ],

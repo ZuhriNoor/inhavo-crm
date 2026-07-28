@@ -188,7 +188,12 @@ export default function SalesOrdersPage() {
                         ₹{(order.totalAmount || 0).toLocaleString('en-IN')}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <button className="text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/sales-orders/${order.id}`); }}
+                          className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 rounded hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                          title="View Details"
+                        >
                           <Eye size={18} className="mx-auto" />
                         </button>
                       </td>
