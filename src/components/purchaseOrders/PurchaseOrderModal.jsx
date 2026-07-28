@@ -28,7 +28,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
       setDeliveryDate(saleOrder?.deliveryDate || '');
       fetchVendorsData();
       
-      // Initialize items from saleOrder (NO PRICING default, editable!) & check if PO already exists
+      // Initialize items from saleOrder (unitPrice default to 0, editable!) & check if PO already exists
       if (saleOrder?.items) {
         setItems(saleOrder.items.map((it) => {
           const assignedPo = (existingPurchaseOrders || []).find(po =>
@@ -40,7 +40,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
               name: it.name || '',
               description: it.description || '',
               qty: it.qty || 1,
-              unitPrice: Number(it.unitPrice) || 0,
+              unitPrice: 0,
               gstPercent: 18,
               selected: false,
               disabled: true,
@@ -52,7 +52,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
             name: it.name || '',
             description: it.description || '',
             qty: it.qty || 1,
-            unitPrice: Number(it.unitPrice) || 0,
+            unitPrice: 0,
             gstPercent: 18,
             selected: true,
             disabled: false
