@@ -9,6 +9,7 @@ import LoadingScreen from '../components/shared/LoadingScreen';
 import DocketModal from '../components/dockets/DocketModal';
 import WarrantyModal from '../components/warranties/WarrantyModal';
 import PurchaseOrderModal from '../components/purchaseOrders/PurchaseOrderModal';
+import PurchaseOrderEditModal from '../components/purchaseOrders/PurchaseOrderEditModal';
 import SalesOrderEditModal from '../components/salesOrders/SalesOrderEditModal';
 import SalesOrderAttachmentModal from '../components/salesOrders/SalesOrderAttachmentModal';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -33,6 +34,8 @@ export default function SalesOrderDetailPage() {
   
   const [warrantyModalOpen, setWarrantyModalOpen] = useState(false);
   const [poModalOpen, setPoModalOpen] = useState(false);
+  const [selectedPo, setSelectedPo] = useState(null);
+  const [editPoModalOpen, setEditPoModalOpen] = useState(false);
   const [editOrderModalOpen, setEditOrderModalOpen] = useState(false);
 
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false);
@@ -276,18 +279,10 @@ export default function SalesOrderDetailPage() {
                                     )}
                                   </div>
                                   
-                                  {assignedPo ? (
+                                  {assignedPo && (
                                     <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                                       PO: {assignedPo.poNumber} ({assignedPo.vendor?.name})
                                     </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setPoModalOpen(true)}
-                                      className="text-[11px] text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 font-medium underline transition-colors"
-                                    >
-                                      + Issue Vendor PO
-                                    </button>
                                   )}
                                 </div>
                               );
@@ -508,7 +503,11 @@ export default function SalesOrderDetailPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {purchaseOrders.map(po => (
-                  <div key={po.id} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-colors">
+                  <div
+                    key={po.id}
+                    onClick={() => { setSelectedPo(po); setEditPoModalOpen(true); }}
+                    className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-colors cursor-pointer group hover:border-purple-300 dark:hover:border-purple-700"
+                  >
                     <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-purple-50/30 dark:bg-purple-900/10">
                       <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-semibold">
                         <Truck size={18} /> {po.poNumber}
@@ -534,7 +533,7 @@ export default function SalesOrderDetailPage() {
                         </div>
                       )}
                     </div>
-                    <div className="p-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 flex gap-3">
+                    <div className="p-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 flex gap-3" onClick={e => e.stopPropagation()}>
                       <PDFDownloadLink
                         document={<PurchaseOrderPDF po={po} />}
                         fileName={`${po.poNumber}.pdf`}
@@ -589,6 +588,15 @@ export default function SalesOrderDetailPage() {
           saleOrder={order}
           existingPurchaseOrders={purchaseOrders}
           onPoCreated={() => fetchData(true)}
+        />
+      )}
+
+      {editPoModalOpen && selectedPo && (
+        <PurchaseOrderEditModal
+          isOpen={editPoModalOpen}
+          onClose={() => { setEditPoModalOpen(false); setSelectedPo(null); }}
+          po={selectedPo}
+          onSaved={() => fetchData(true)}
         />
       )}
 

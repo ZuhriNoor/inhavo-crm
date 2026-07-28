@@ -4,7 +4,7 @@ import { createDocket, updateDocketWithFiles, getDocketTemplates } from '../../s
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocketPDF } from '../../utils/docketPdfTemplate';
 import LoadingScreen from '../shared/LoadingScreen';
-import { compressImageFile, loadRemoteImageAsDataUrl } from '../../utils/imageUtils';
+import { compressImageFile, loadRemoteImageAsDataUrl, fileToDataUrl } from '../../utils/imageUtils';
 import { useStore } from '../../contexts/StoreContext';
 
 export default function DocketModal({ isOpen, onClose, saleOrder, item, existingDocket, onDocketCreated }) {
@@ -147,17 +147,27 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
     setLoading(true);
     try {
       const preview = generatePreviewDocket();
+
+      const imageFilesList = additionalFiles.filter(
+        f => !f.type?.toLowerCase().includes('pdf') && !f.name?.toLowerCase().endsWith('.pdf')
+      );
+
       const [generalDataUrl, dynamicFieldsDataUrls, extraDataUrls] = await Promise.all([
-        loadRemoteImageAsDataUrl(preview.generalImageUrl).catch(() => preview.generalImageUrl),
+        generalImageFile
+          ? fileToDataUrl(generalImageFile)
+          : (preview.generalImageUrl ? loadRemoteImageAsDataUrl(preview.generalImageUrl).catch(() => preview.generalImageUrl) : null),
         Promise.all(
           (preview.dynamicFields || []).map(async (f) => ({
             ...f,
-            imageUrl: await loadRemoteImageAsDataUrl(f.imageUrl).catch(() => f.imageUrl)
+            imageUrl: f.imageFile
+              ? await fileToDataUrl(f.imageFile)
+              : (f.imageUrl ? await loadRemoteImageAsDataUrl(f.imageUrl).catch(() => f.imageUrl) : null)
           }))
         ),
-        Promise.all(
-          (preview.extraImageUrls || []).map((url) => loadRemoteImageAsDataUrl(url).catch(() => url))
-        )
+        Promise.all([
+          ...imageFilesList.map(f => fileToDataUrl(f)),
+          ...(existingExtraImageUrls || []).map(url => loadRemoteImageAsDataUrl(url).catch(() => url))
+        ])
       ]);
 
       const finalPreview = {

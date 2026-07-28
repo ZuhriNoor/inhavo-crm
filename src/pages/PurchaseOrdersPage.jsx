@@ -4,6 +4,7 @@ import { getAllPurchaseOrders, updatePurchaseOrderStatus, deletePurchaseOrder } 
 import { useStore } from '../contexts/StoreContext';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
+import PurchaseOrderEditModal from '../components/purchaseOrders/PurchaseOrderEditModal';
 
 const STATUS_COLORS = {
   Issued: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -16,6 +17,8 @@ export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPo, setSelectedPo] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { activeStore } = useStore();
 
   useEffect(() => {
@@ -125,7 +128,8 @@ export default function PurchaseOrdersPage() {
             return (
               <div
                 key={po.id}
-                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                onClick={() => { setSelectedPo(po); setEditModalOpen(true); }}
+                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer group"
               >
                 {/* Info Left */}
                 <div className="space-y-2 flex-1">
@@ -160,7 +164,7 @@ export default function PurchaseOrdersPage() {
                 </div>
 
                 {/* Status & PDF Right */}
-                <div className="flex items-center gap-3 self-end md:self-center">
+                <div className="flex items-center gap-3 self-end md:self-center" onClick={e => e.stopPropagation()}>
                   <select
                     value={po.status || 'Issued'}
                     onChange={e => handleStatusChange(po.id, e.target.value)}
@@ -202,6 +206,15 @@ export default function PurchaseOrdersPage() {
             );
           })}
         </div>
+      )}
+
+      {editModalOpen && selectedPo && (
+        <PurchaseOrderEditModal
+          isOpen={editModalOpen}
+          onClose={() => { setEditModalOpen(false); setSelectedPo(null); }}
+          po={selectedPo}
+          onSaved={fetchOrders}
+        />
       )}
     </div>
   );

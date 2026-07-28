@@ -97,6 +97,16 @@ export const updatePurchaseOrderStatus = async (id, status) => {
   });
 };
 
+export const updatePurchaseOrder = async (id, poData) => {
+  const docRef = doc(db, PO_COL, id);
+  const updatedData = {
+    ...poData,
+    updatedAt: serverTimestamp()
+  };
+  await updateDoc(docRef, updatedData);
+  return { id, ...updatedData };
+};
+
 export const deletePurchaseOrder = async (id) => {
   const docRef = doc(db, PO_COL, id);
   await deleteDoc(docRef);

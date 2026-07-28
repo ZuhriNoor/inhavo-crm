@@ -107,36 +107,66 @@ export const compressImageFile = async (file, maxWidth = 800, maxHeight = 800, q
   });
 };
 
-export const loadRemoteImageAsDataUrl = async (url) => {
-  if (!url) return null;
-  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-
-  // On localhost: route through Vite dev proxy → no CORS issue
-  const fetchUrl = toProxiedUrl(url);
-
-  try {
-    const response = await fetch(fetchUrl);
-    if (response.ok) {
-      const blob = await response.blob();
-      return await blobToDataUrl(blob);
+export const fileToDataUrl = (fileOrBlob) => {
+  return new Promise((resolve) => {
+    if (!fileOrBlob) return resolve(null);
+    if (typeof fileOrBlob === 'string') {
+      if (fileOrBlob.startsWith('data:')) return resolve(fileOrBlob);
+      if (fileOrBlob.startsWith('blob:')) {
+        fetch(fileOrBlob)
+          .then(res => res.blob())
+          .then(blob => blobToDataUrl(blob))
+          .then(resolve)
+          .catch(() => resolve(fileOrBlob));
+        return;
+      }
+      return resolve(fileOrBlob);
     }
-  } catch (e) {
-    // proxy fetch failed, fall through
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(fileOrBlob);
+  });
+};
+
+export const loadRemoteImageAsDataUrl = async (input) => {
+  if (!input) return null;
+  if (typeof input !== 'string' || input.startsWith('data:') || input.startsWith('blob:')) {
+    return await fileToDataUrl(input);
   }
 
-  // Fallback: try the original URL directly (works in production)
-  if (fetchUrl !== url) {
+  // 1. On localhost, try storage-proxy first
+  const fetchUrl = toProxiedUrl(input);
+  if (fetchUrl !== input) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(fetchUrl);
       if (response.ok) {
         const blob = await response.blob();
         return await blobToDataUrl(blob);
       }
     } catch (e) {
-      // direct fetch failed too
+      // proxy failed
     }
   }
 
-  // Last resort: return the URL as-is so the app never crashes
-  return url;
+  // 2. Try HTML Image object loading (bypasses direct fetch CORS issues for canvas rendering)
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(dataUrl);
+      } catch (err) {
+        resolve(input);
+      }
+    };
+    img.onerror = () => resolve(input);
+    img.src = input;
+  });
 };
