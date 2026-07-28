@@ -7,6 +7,7 @@ import { createQuotation, updateQuotation } from '../../services/quotationsServi
 import { useAuth } from '../../contexts/AuthContext';
 import { useStore } from '../../contexts/StoreContext';
 import QuotationPDF from '../../utils/pdfTemplate';
+import { compressImageFile } from '../../utils/imageUtils';
 
 const inputCls =
   'w-full px-3 py-2 text-sm bg-white dark:bg-slate-700/70 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all';
