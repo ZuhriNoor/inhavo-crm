@@ -58,9 +58,9 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Stage' : 'New Stage'}
           </h2>
@@ -68,7 +68,7 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
             <X size={18} />
           </button>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-4 sm:px-6 py-4 space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Stage Name *</label>
             <input
@@ -94,12 +94,12 @@ const StageModal = ({ stage: editStage, existingCount, onClose, onSaved }) => {
               ))}
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">Cancel</button>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-center">Cancel</button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center gap-2"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: selectedColor || '#875a7b' }}
             >
               {isSubmitting ? <><span className="spinner w-3 h-3 border-white" /> Saving…</> : (isEditing ? 'Save' : 'Create Stage')}
@@ -125,26 +125,26 @@ const SortableStageRow = ({ stage, onEdit, onDelete }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all"
+      className="flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all"
     >
-      <button {...attributes} {...listeners} className="p-1 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing">
+      <button {...attributes} {...listeners} className="p-1 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing shrink-0">
         <GripVertical size={16} />
       </button>
       <div
         className="w-3 h-3 rounded-full shrink-0"
         style={{ background: stage.color || '#875a7b' }}
       />
-      <span className="flex-1 text-sm font-medium text-gray-800 dark:text-slate-100">{stage.name}</span>
-      <span className="text-xs text-gray-400 dark:text-slate-400">Order {stage.order + 1}</span>
+      <span className="flex-1 text-xs sm:text-sm font-medium text-gray-800 dark:text-slate-100 truncate">{stage.name}</span>
+      <span className="text-[10px] sm:text-xs text-gray-400 dark:text-slate-400 shrink-0">Order {stage.order + 1}</span>
       <button
         onClick={() => onEdit(stage)}
-        className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+        className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg shrink-0"
       >
         <Edit2 size={13} />
       </button>
       <button
         onClick={() => onDelete(stage)}
-        className="p-1.5 text-red-400 dark:text-rose-400 hover:text-red-600 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg"
+        className="p-1.5 text-red-400 dark:text-rose-400 hover:text-red-600 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg shrink-0"
       >
         <Trash2 size={13} />
       </button>
@@ -199,9 +199,9 @@ const PipelinePage = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
-      <div className="flex items-center justify-between px-6 py-4 shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
         <div className="flex items-center gap-3">
-          <p className="text-sm text-gray-500 dark:text-slate-400">{stages.length} stage(s)</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">{stages.length} stage(s)</p>
           {stages.length === 0 && (
             <button
               onClick={handleSeedDefaults}
@@ -217,7 +217,7 @@ const PipelinePage = () => {
           </button>
           <button
             onClick={() => { setEditingStage(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white rounded-lg"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 text-xs sm:text-sm text-white font-medium rounded-lg"
             style={{ background: '#875a7b' }}
           >
             <Plus size={15} /> New Stage
@@ -225,7 +225,7 @@ const PipelinePage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <p className="text-xs text-gray-400 dark:text-slate-400 mb-3">
           Drag stages to reorder them. The order here is the order shown on the Kanban board.
         </p>

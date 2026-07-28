@@ -104,6 +104,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Helvetica-Bold',
   },
+  totalContainer: {
+    marginTop: 10,
+    alignItems: 'flex-end',
+  },
+  totalLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 240,
+    marginBottom: 4,
+    paddingRight: 10,
+  },
+  totalLineLabel: {
+    fontSize: 9,
+    color: '#4b5563',
+  },
+  totalLineValue: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1f2937',
+  },
   termsContainer: {
     marginTop: 20,
   },
@@ -163,6 +183,17 @@ const today = () =>
 
 const QuotationPDF = ({ quotation }) => {
   const { customerDetails, items = [], notes, totalAmount } = quotation;
+
+  const productsTotal =
+    quotation.productsTotal ??
+    items.reduce((acc, item) => acc + (Number(item.qty) || 0) * (Number(item.unitPrice) || 0), 0);
+
+  const extraCosts = quotation.extraCosts || [];
+  const extraCostsTotal =
+    quotation.extraCostsTotal ??
+    extraCosts.reduce((acc, ec) => acc + (Number(ec.amount) || 0), 0);
+
+  const grandTotal = quotation.grandTotal ?? totalAmount ?? (productsTotal + extraCostsTotal);
 
   return (
     <Document title={`Quotation - ${customerDetails?.name || 'Customer'}`}>
@@ -233,10 +264,30 @@ const QuotationPDF = ({ quotation }) => {
           );
         })}
 
-        <View style={styles.totalRow} wrap={false}>
-          <Text style={styles.totalLabel}>Grand Total:</Text>
-          <Text style={styles.totalValue}>Rs. {formatNumber(totalAmount)}</Text>
-        </View>
+        {/* Totals Breakdown */}
+        {extraCosts.length > 0 ? (
+          <View style={styles.totalContainer} wrap={false}>
+            <View style={styles.totalLine}>
+              <Text style={styles.totalLineLabel}>Products Subtotal:</Text>
+              <Text style={styles.totalLineValue}>Rs. {formatNumber(productsTotal)}</Text>
+            </View>
+            {extraCosts.map((ec, idx) => (
+              <View key={idx} style={styles.totalLine}>
+                <Text style={styles.totalLineLabel}>{ec.name || 'Extra Cost'}:</Text>
+                <Text style={styles.totalLineValue}>Rs. {formatNumber(ec.amount)}</Text>
+              </View>
+            ))}
+            <View style={[styles.totalLine, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#c4a484' }]}>
+              <Text style={[styles.totalLabel, { marginRight: 0 }]}>Grand Total:</Text>
+              <Text style={styles.totalValue}>Rs. {formatNumber(grandTotal)}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.totalRow} wrap={false}>
+            <Text style={styles.totalLabel}>Grand Total:</Text>
+            <Text style={styles.totalValue}>Rs. {formatNumber(grandTotal)}</Text>
+          </View>
+        )}
 
         {/* Horizontal line (brown) before terms */}
         <View style={[styles.brownLine, { marginTop: 20 }]} wrap={false} />

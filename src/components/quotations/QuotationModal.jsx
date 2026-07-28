@@ -36,6 +36,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
       customerAddress: lead?.address || '',
       notes: storeDefaultTerms,
       items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
+      extraCosts: [],
     },
   });
 
@@ -49,6 +50,7 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         customerAddress: editingQuotation.customerDetails?.address || '',
         notes: editingQuotation.notes || '',
         items: editingQuotation.items?.length ? editingQuotation.items : [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
+        extraCosts: editingQuotation.extraCosts?.length ? editingQuotation.extraCosts : [],
       });
     } else {
       reset({
@@ -58,12 +60,15 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         customerAddress: lead?.address || '',
         notes: storeDefaultTerms,
         items: [{ name: '', description: '', photo: '', qty: 1, unitPrice: 0 }],
+        extraCosts: [],
       });
     }
   }, [editingQuotation, lead, storeDefaultTerms, reset]);
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const { fields: extraCostFields, append: appendExtraCost, remove: removeExtraCost } = useFieldArray({ control, name: 'extraCosts' });
   const items = watch('items');
+  const extraCosts = watch('extraCosts');
 
   const handlePhotoChange = (idx, e) => {
     const file = e.target.files[0];
@@ -102,10 +107,17 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
     }
   };
 
-  const totalAmount = (items || []).reduce(
+  const productsTotal = (items || []).reduce(
     (acc, curr) => acc + (Number(curr.qty) || 0) * (Number(curr.unitPrice) || 0),
     0
   );
+
+  const extraCostsTotal = (extraCosts || []).reduce(
+    (acc, curr) => acc + (Number(curr.amount) || 0),
+    0
+  );
+
+  const grandTotal = productsTotal + extraCostsTotal;
 
   const onSubmit = async (data) => {
     setGenerating(true);
@@ -123,6 +135,13 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
         };
       });
 
+      const formattedExtraCosts = (data.extraCosts || [])
+        .filter((ec) => ec.name?.trim() || Number(ec.amount) > 0)
+        .map((ec) => ({
+          name: ec.name || '',
+          amount: Number(ec.amount) || 0,
+        }));
+
       const payload = {
         leadId: lead?.id || editingQuotation?.leadId || null,
         storeId: storeId || '',
@@ -133,7 +152,11 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
           address: data.customerAddress || '',
         },
         items: formattedItems,
-        totalAmount,
+        extraCosts: formattedExtraCosts,
+        productsTotal,
+        extraCostsTotal,
+        grandTotal,
+        totalAmount: grandTotal,
         notes: data.notes || '',
         createdBy: user?.uid || '',
         preparedBy: {
@@ -369,11 +392,79 @@ const QuotationModal = ({ lead, storeId, editingQuotation, onClose, onSaved }) =
                   <Plus size={14} /> Add Another Item
                 </button>
               </div>
-              {/* Total */}
-              <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
-                <span className="text-sm text-gray-500 dark:text-slate-400">Total:</span>
-                <span className="text-base font-bold text-gray-900 dark:text-slate-100">
-                  ₹{totalAmount.toLocaleString('en-IN')}
+              
+              {/* Products Subtotal */}
+              <div className="flex items-center justify-end gap-2 mt-3 pt-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Products Subtotal:</span>
+                <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
+                  ₹{productsTotal.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            {/* Extra Costs Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest">
+                  Other / Extra Costs (e.g. Transportation, Tax)
+                </h3>
+              </div>
+
+              {extraCostFields.map((field, idx) => (
+                <div key={field.id} className="flex items-center gap-3 mb-2 bg-gray-50/60 dark:bg-slate-700/40 border border-gray-200 dark:border-slate-700 p-2.5 rounded-xl">
+                  <div className="flex-1">
+                    <input
+                      {...register(`extraCosts.${idx}.name`)}
+                      className={inputCls}
+                      placeholder="e.g. Transportation cost, Tax, Packing"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <input
+                      {...register(`extraCosts.${idx}.amount`)}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={inputCls}
+                      placeholder="Amount (₹)"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeExtraCost(idx)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                    title="Remove Cost"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => appendExtraCost({ name: '', amount: '' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-all border border-dashed border-purple-200 dark:border-purple-800 w-full justify-center mt-2"
+              >
+                <Plus size={14} /> Add Extra Cost
+              </button>
+            </div>
+
+            {/* Total Summary */}
+            <div className="bg-gray-50/80 dark:bg-slate-700/30 p-4 rounded-xl border border-gray-200 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
+                <span>Products Subtotal:</span>
+                <span className="font-medium">₹{productsTotal.toLocaleString('en-IN')}</span>
+              </div>
+              {extraCostsTotal > 0 && (
+                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
+                  <span>Extra Costs Total:</span>
+                  <span className="font-medium">₹{extraCostsTotal.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-sm font-bold text-gray-900 dark:text-slate-100 pt-2 border-t border-gray-200 dark:border-slate-700">
+                <span>Grand Total:</span>
+                <span className="text-base text-purple-700 dark:text-purple-300">
+                  ₹{grandTotal.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

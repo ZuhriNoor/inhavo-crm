@@ -138,12 +138,52 @@ const QuotationDetailModal = ({ quotation, onClose, onEdit, onDownload, isDownlo
               })}
             </div>
             
-            <div className="flex justify-end mt-4 px-2">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-slate-400 mb-1">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">₹{(quotation.totalAmount || 0).toLocaleString('en-IN')}</p>
-              </div>
-            </div>
+            {/* Extra Costs section & Total Summary */}
+            {(() => {
+              const productsTotal = quotation.productsTotal ?? (quotation.items || []).reduce((acc, item) => acc + (Number(item.qty) || 0) * (Number(item.unitPrice) || 0), 0);
+              const extraCosts = quotation.extraCosts || [];
+              const extraCostsTotal = quotation.extraCostsTotal ?? extraCosts.reduce((acc, ec) => acc + (Number(ec.amount) || 0), 0);
+              const grandTotal = quotation.grandTotal ?? quotation.totalAmount ?? (productsTotal + extraCostsTotal);
+
+              return (
+                <div className="mt-6 space-y-4">
+                  {extraCosts.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">
+                        Other / Extra Costs
+                      </h4>
+                      <div className="bg-gray-50 dark:bg-slate-700/40 border border-gray-200 dark:border-slate-700 rounded-xl divide-y divide-gray-100 dark:divide-slate-700/60">
+                        {extraCosts.map((ec, idx) => (
+                          <div key={idx} className="flex justify-between items-center px-4 py-2.5 text-sm">
+                            <span className="text-gray-700 dark:text-slate-300 font-medium">{ec.name || 'Extra Cost'}</span>
+                            <span className="text-gray-900 dark:text-slate-100 font-semibold">
+                              ₹{(Number(ec.amount) || 0).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-purple-50/50 dark:bg-slate-700/60 border border-purple-100 dark:border-slate-700 rounded-xl p-4 flex flex-col items-end gap-1.5 text-right">
+                    <div className="flex justify-between w-full max-w-xs text-xs text-gray-500 dark:text-slate-400">
+                      <span>Products Subtotal:</span>
+                      <span className="font-medium text-gray-800 dark:text-slate-200">₹{productsTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                    {extraCosts.length > 0 && (
+                      <div className="flex justify-between w-full max-w-xs text-xs text-gray-500 dark:text-slate-400">
+                        <span>Extra Costs:</span>
+                        <span className="font-medium text-gray-800 dark:text-slate-200">₹{extraCostsTotal.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between w-full max-w-xs text-base font-bold text-gray-900 dark:text-slate-100 pt-2 border-t border-purple-200/60 dark:border-slate-600">
+                      <span>Grand Total:</span>
+                      <span className="text-xl text-purple-700 dark:text-purple-300">₹{grandTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Notes */}

@@ -35,9 +35,9 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Store' : 'New Store'}
           </h2>
@@ -45,8 +45,8 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
             <X size={18} />
           </button>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0">
-          <div className="px-6 py-4 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 space-y-4 overflow-y-auto flex-1">
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Store Name *</label>
               <input
@@ -93,14 +93,14 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50 dark:bg-slate-800/80 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50 dark:bg-slate-800/80 rounded-b-2xl">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-center">
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center gap-2"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: '#875a7b' }}
             >
               {isSubmitting ? <><span className="spinner w-3 h-3 border-white" /> Saving…</> : (isEditing ? 'Save' : 'Create Store')}
@@ -149,15 +149,15 @@ const StoresPage = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
-      <div className="flex items-center justify-between px-6 py-4 shrink-0">
-        <p className="text-sm text-gray-500 dark:text-slate-400">{stores.length} store(s)</p>
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">{stores.length} store(s)</p>
         <div className="flex items-center gap-2">
           <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
             onClick={() => { setEditingStore(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white rounded-lg"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 text-xs sm:text-sm text-white font-medium rounded-lg"
             style={{ background: '#875a7b' }}
           >
             <Plus size={15} /> New Store
@@ -165,9 +165,9 @@ const StoresPage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
           </div>
         ) : stores.length === 0 ? (
@@ -176,7 +176,7 @@ const StoresPage = () => {
             <p className="text-sm">No stores yet. Create one above.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {stores.map((store, idx) => {
               const color = STORE_COLORS[idx % STORE_COLORS.length];
               return (
@@ -184,17 +184,17 @@ const StoresPage = () => {
                   <div className="h-1.5" style={{ background: color }} />
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
                           className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
                           style={{ background: color }}
                         >
                           <Store size={16} />
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-800 dark:text-slate-100 text-sm">{store.name}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-800 dark:text-slate-100 text-sm truncate">{store.name}</p>
                           {store.description && (
-                            <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">{store.description}</p>
+                            <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 line-clamp-2">{store.description}</p>
                           )}
                         </div>
                       </div>

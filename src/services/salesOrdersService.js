@@ -93,7 +93,11 @@ export const createSaleOrderFromQuotation = async (quotation) => {
       storeId: quotation.storeId,
       customerDetails: quotation.customerDetails,
       items: quotation.items,
-      totalAmount: quotation.totalAmount,
+      extraCosts: quotation.extraCosts || [],
+      productsTotal: quotation.productsTotal || quotation.totalAmount || 0,
+      extraCostsTotal: quotation.extraCostsTotal || 0,
+      grandTotal: quotation.grandTotal || quotation.totalAmount || 0,
+      totalAmount: quotation.grandTotal || quotation.totalAmount || 0,
       status: 'Confirmed',
       createdAt: serverTimestamp(),
     };

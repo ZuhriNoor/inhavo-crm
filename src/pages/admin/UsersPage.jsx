@@ -90,12 +90,10 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
       console.error('User save error:', err);
       alert(err.message || 'Failed to save user.');
     }
-  };
-
-  return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+  };  return (
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md max-h-[95vh] md:max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit User' : 'New User'}
           </h2>
@@ -105,7 +103,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 overflow-hidden">
-          <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+          <div className="px-4 sm:px-6 py-4 space-y-4 overflow-y-auto flex-1">
             <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Display Name *</label>
             <input
@@ -148,6 +146,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-0.5">{errors.email.message}</p>}
               </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Password *</label>
                 <input
@@ -195,14 +194,14 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
         </div>
 
 
-          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-center">
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center gap-2"
+              className="w-full sm:w-auto px-4 py-2 text-sm text-white rounded-lg disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: '#875a7b' }}
             >
               {isSubmitting
@@ -271,15 +270,15 @@ const UsersPage = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
-      <div className="flex items-center justify-between px-6 py-4 shrink-0">
-        <p className="text-sm text-gray-500 dark:text-slate-400">{users.length} user(s)</p>
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">{users.length} user(s)</p>
         <div className="flex items-center gap-2">
           <button onClick={loadData} disabled={loading} className="p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
             onClick={() => { setEditingUser(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white rounded-lg"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 text-xs sm:text-sm text-white font-medium rounded-lg"
             style={{ background: '#875a7b' }}
           >
             <Plus size={15} /> New User
@@ -287,7 +286,7 @@ const UsersPage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
@@ -295,33 +294,35 @@ const UsersPage = () => {
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-slate-500 text-sm">No users yet.</div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {users.map((u) => {
               const uid = u.uid || u.id;
               const avatarColor = stringToColor(u.displayName);
               return (
-                <div key={uid} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{ background: avatarColor }}
-                  >
-                    {getInitials(u.displayName)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">{u.displayName}</p>
-                      {u.role === 'admin' && (
-                        <span className="flex items-center gap-1 text-xs bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
-                          <Shield size={10} /> Admin
-                        </span>
-                      )}
+                <div key={uid} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-all">
+                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                      style={{ background: avatarColor }}
+                    >
+                      {getInitials(u.displayName)}
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-slate-400">{u.email}</p>
-                    <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">
-                      {getStoreNames(u.assignedStores)}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">{u.displayName}</p>
+                        {u.role === 'admin' && (
+                          <span className="flex items-center gap-1 text-[10px] sm:text-xs bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full shrink-0 font-medium">
+                            <Shield size={10} /> Admin
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-slate-400 truncate">{u.email}</p>
+                      <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">
+                        {getStoreNames(u.assignedStores)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 self-end sm:self-center shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 w-full sm:w-auto justify-end border-gray-100 dark:border-slate-700/60">
                     <button
                       onClick={() => handleResetPassword(u)}
                       className="p-2 text-gray-400 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-all"
