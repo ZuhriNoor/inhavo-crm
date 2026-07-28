@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { formatDate } from './helpers';
 
 const styles = StyleSheet.create({
   page: {
@@ -202,9 +203,7 @@ const styles = StyleSheet.create({
 });
 
 export function PurchaseOrderPDF({ po }) {
-  const formattedDate = po?.createdAt?.toDate
-    ? po.createdAt.toDate().toLocaleDateString('en-GB')
-    : new Date().toLocaleDateString('en-GB');
+  const formattedDate = formatDate(po?.createdAt || new Date());
 
   const subtotal = Number(po?.subtotal) || 0;
   const gstTotal = Number(po?.gstTotal) || 0;
@@ -256,7 +255,7 @@ export function PurchaseOrderPDF({ po }) {
             {po?.deliveryDate && (
               <View style={styles.metaItem}>
                 <Text style={styles.metaLabel}>Target Delivery Date:</Text>
-                <Text style={styles.metaVal}>{po.deliveryDate}</Text>
+                <Text style={styles.metaVal}>{formatDate(po.deliveryDate)}</Text>
               </View>
             )}
             {po?.salesOrderNumber && (

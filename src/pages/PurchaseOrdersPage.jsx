@@ -5,6 +5,7 @@ import { useStore } from '../contexts/StoreContext';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
 import PurchaseOrderEditModal from '../components/purchaseOrders/PurchaseOrderEditModal';
+import { formatDate } from '../utils/helpers';
 
 const STATUS_COLORS = {
   Issued: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -121,9 +122,7 @@ export default function PurchaseOrdersPage() {
       ) : (
         <div className="space-y-4">
           {filteredOrders.map(po => {
-            const dateStr = po.createdAt?.toDate
-              ? po.createdAt.toDate().toLocaleDateString('en-GB')
-              : 'Recently created';
+            const dateStr = formatDate(po.createdAt);
 
             return (
               <div
@@ -142,7 +141,7 @@ export default function PurchaseOrdersPage() {
                     </span>
                     {po.deliveryDate && (
                       <span className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded flex items-center gap-1 font-medium">
-                        <Calendar size={12} /> Target: {po.deliveryDate}
+                        <Calendar size={12} /> Target: {formatDate(po.deliveryDate)}
                       </span>
                     )}
                   </div>

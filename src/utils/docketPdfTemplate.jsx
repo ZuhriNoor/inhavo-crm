@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { formatDate } from './helpers';
 
 const styles = StyleSheet.create({
   page: { padding: 30, paddingBottom: 50, fontSize: 10, fontFamily: 'Helvetica', backgroundColor: '#ffffff' },
@@ -41,7 +42,7 @@ export const DocketPDF = ({ docket, template }) => {
             </Text>
             {docket.deliveryDate && (
               <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginTop: 3 }}>
-                Target Delivery Date: {docket.deliveryDate}
+                Target Delivery Date: {formatDate(docket.deliveryDate)}
               </Text>
             )}
           </View>
@@ -96,7 +97,7 @@ export const DocketPDF = ({ docket, template }) => {
             <View>
               <Text style={styles.docketTitle}>SPECIFICATIONS</Text>
               <Text style={{ fontSize: 10, color: '#475569' }}>
-                Docket No: {docket.docketNumber} {docket.deliveryDate ? `| Delivery: ${docket.deliveryDate}` : ''}
+                Docket No: {docket.docketNumber} {docket.deliveryDate ? `| Delivery: ${formatDate(docket.deliveryDate)}` : ''}
               </Text>
             </View>
             <Image src="/inhavo-logo-quotation-top.png" style={styles.logo} />

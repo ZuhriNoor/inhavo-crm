@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { formatDate } from './helpers';
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: 'Helvetica', backgroundColor: '#ffffff', color: '#1f2937' },
@@ -67,7 +68,7 @@ export const WarrantyPDF = ({ warranty }) => {
             <Text style={styles.infoLabel}>Order Reference No:</Text>
             <Text style={styles.infoValue}>{warranty.salesOrderNumber}</Text>
             <Text style={styles.infoLabel}>Date of Issue/Delivery:</Text>
-            <Text style={styles.infoValue}>{new Date().toLocaleDateString('en-IN')}</Text>
+            <Text style={styles.infoValue}>{formatDate(new Date())}</Text>
           </View>
         </View>
 

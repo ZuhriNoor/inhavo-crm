@@ -67,7 +67,7 @@ const DashboardPage = () => {
       const rows = leads.map(l => {
         const stageName = stages.find(s => s.id === l.stageId)?.name || '';
         const date = l.createdAt?.toDate?.() ? l.createdAt.toDate() : (l.createdAt ? new Date(l.createdAt) : null);
-        const formattedDate = date ? date.toLocaleDateString() : '';
+        const formattedDate = date ? `${String(date.getDate()).padStart(2,'0')}-${String(date.getMonth()+1).padStart(2,'0')}-${date.getFullYear()}` : '';
         return [
           `"${l.leadNumber || 'N/A'}"`,
           `"${String(l.opportunityTitle || '').replace(/"/g, '""')}"`,

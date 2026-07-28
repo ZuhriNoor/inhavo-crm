@@ -174,12 +174,13 @@ const formatNumber = (amount) => {
   }).format(amount || 0);
 };
 
-const today = () =>
-  new Date().toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+const today = () => {
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+};
 
 const QuotationPDF = ({ quotation }) => {
   const { customerDetails, items = [], notes, totalAmount } = quotation;

@@ -16,20 +16,57 @@ export const formatDistanceToNow = (date) => {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 /**
- * Format a date as DD/MM/YYYY
+ * Format a date as DD-MM-YYYY
  */
-export const formatDate = (date) => {
-  if (!date) return '—';
-  const d = date instanceof Date ? date : date.toDate?.() || new Date(date);
-  return d.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+export const formatDate = (val) => {
+  if (!val) return '—';
+  let d;
+  if (val instanceof Date) {
+    d = val;
+  } else if (val?.toDate && typeof val.toDate === 'function') {
+    d = val.toDate();
+  } else if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.includes('-')) {
+      const parts = trimmed.split('-');
+      if (parts[0].length === 4 && parts.length === 3) {
+        // YYYY-MM-DD -> DD-MM-YYYY
+        const [y, m, day] = parts;
+        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+      } else if (parts[2]?.length === 4 && parts.length === 3) {
+        // Already DD-MM-YYYY
+        return trimmed;
+      }
+    } else if (trimmed.includes('/')) {
+      const parts = trimmed.split('/');
+      if (parts[0].length === 4 && parts.length === 3) {
+        // YYYY/MM/DD -> DD-MM-YYYY
+        const [y, m, day] = parts;
+        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+      } else if (parts[2]?.length === 4 && parts.length === 3) {
+        // DD/MM/YYYY -> DD-MM-YYYY
+        const [day, m, y] = parts;
+        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+      }
+    }
+    d = new Date(trimmed);
+  } else if (typeof val === 'number') {
+    d = new Date(val);
+  }
+
+  if (!d || isNaN(d.getTime())) return String(val || '—');
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 /**

@@ -17,6 +17,7 @@ import { DocketPDF } from '../utils/docketPdfTemplate';
 import { WarrantyPDF } from '../utils/warrantyPdfTemplate';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
 import { getDocketTemplates } from '../services/docketsService';
+import { formatDate } from '../utils/helpers';
 
 export default function SalesOrderDetailPage() {
   const { orderId } = useParams();
@@ -520,7 +521,7 @@ export default function SalesOrderDetailPage() {
                       <div>
                         <h4 className="font-bold text-gray-900 dark:text-slate-100 text-base">{po.vendor?.name}</h4>
                         {po.vendor?.contactPerson && <p className="text-xs text-gray-500 dark:text-slate-400">Attn: {po.vendor.contactPerson}</p>}
-                        {po.deliveryDate && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">Required Delivery: {po.deliveryDate}</p>}
+                        {po.deliveryDate && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">Required Delivery: {formatDate(po.deliveryDate)}</p>}
                       </div>
                       {po.items && po.items.length > 0 && (
                         <div className="space-y-1 text-xs border-t border-gray-100 dark:border-slate-700 pt-2 text-gray-600 dark:text-slate-300">

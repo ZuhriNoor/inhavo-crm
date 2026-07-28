@@ -4,6 +4,7 @@ import { getVendors } from '../../services/vendorsService';
 import { updatePurchaseOrder } from '../../services/purchaseOrdersService';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PurchaseOrderPDF } from '../../utils/purchaseOrderPdfTemplate';
+import { formatDate } from '../../utils/helpers';
 
 const STATUS_COLORS = {
   Issued: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -131,9 +132,7 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
     }
   };
 
-  const formattedDate = po.createdAt?.toDate
-    ? po.createdAt.toDate().toLocaleDateString('en-GB')
-    : 'Recently created';
+  const formattedDate = formatDate(po.createdAt);
 
   return (
     <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
@@ -216,7 +215,7 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
                   <p className="text-gray-600 dark:text-slate-300"><span className="font-medium text-gray-800 dark:text-slate-200">PO Number:</span> {po.poNumber}</p>
                   <p className="text-gray-600 dark:text-slate-300"><span className="font-medium text-gray-800 dark:text-slate-200">Sales Order Ref:</span> {po.salesOrderNumber || 'N/A'}</p>
                   <p className="text-amber-700 dark:text-amber-400 font-semibold mt-1">
-                    Target Delivery Date: {deliveryDate || 'Not specified'}
+                    Target Delivery Date: {deliveryDate ? formatDate(deliveryDate) : 'Not specified'}
                   </p>
                 </div>
 
