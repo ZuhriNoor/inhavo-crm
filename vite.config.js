@@ -86,5 +86,18 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    proxy: {
+      // Proxy Firebase Storage requests on dev server to avoid CORS
+      '/storage-proxy': {
+        target: 'https://firebasestorage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/storage-proxy/, ''),
+        secure: true,
+      }
+    }
+  }
 })
+
+
 

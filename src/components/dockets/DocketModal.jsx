@@ -4,7 +4,7 @@ import { createDocket, updateDocketWithFiles, getDocketTemplates } from '../../s
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocketPDF } from '../../utils/docketPdfTemplate';
 import LoadingScreen from '../shared/LoadingScreen';
-import { compressImageFile } from '../../utils/imageUtils';
+import { compressImageFile, loadRemoteImageAsDataUrl } from '../../utils/imageUtils';
 import { useStore } from '../../contexts/StoreContext';
 
 export default function DocketModal({ isOpen, onClose, saleOrder, item, existingDocket, onDocketCreated }) {
@@ -16,13 +16,15 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   // General Info
   const [generalDescription, setGeneralDescription] = useState('');
   const [generalImageFile, setGeneralImageFile] = useState(null);
+  const [existingGeneralImageUrl, setExistingGeneralImageUrl] = useState(null);
   
   // Dynamic Fields
   const [selectedFields, setSelectedFields] = useState({}); // { [key]: boolean }
-  const [fieldData, setFieldData] = useState({}); // { [key]: { description: '', imageFile: null } }
+  const [fieldData, setFieldData] = useState({}); // { [key]: { description: '', imageFile: null, imageUrl: null } }
   
   // Extra Attachments
   const [additionalFiles, setAdditionalFiles] = useState([]); // Array of File objects
+  const [existingExtraImageUrls, setExistingExtraImageUrls] = useState([]);
   
   const [step, setStep] = useState(1); // 1 = Draft, 2 = Confirm
   const [loading, setLoading] = useState(false);
@@ -48,13 +50,19 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
         const tpl = data.find(t => t.id === existingDocket.templateId) || data[0];
         setSelectedTemplate(tpl);
         setGeneralDescription(existingDocket.generalDescription || '');
+        setExistingGeneralImageUrl(existingDocket.generalImageUrl || null);
+        setExistingExtraImageUrls(existingDocket.extraImageUrls || []);
         
         const selFields = {};
         const fData = {};
         if (existingDocket.dynamicFields) {
           existingDocket.dynamicFields.forEach(f => {
             selFields[f.key] = true;
-            fData[f.key] = { description: f.description || '', imageFile: null };
+            fData[f.key] = {
+              description: f.description || '',
+              imageFile: null,
+              imageUrl: f.imageUrl || null
+            };
           });
         }
         setSelectedFields(selFields);
@@ -74,7 +82,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   const handleFieldToggle = (key) => {
     setSelectedFields(prev => ({ ...prev, [key]: !prev[key] }));
     if (!selectedFields[key] && !fieldData[key]) {
-      setFieldData(prev => ({ ...prev, [key]: { description: '', imageFile: null } }));
+      setFieldData(prev => ({ ...prev, [key]: { description: '', imageFile: null, imageUrl: null } }));
     }
   };
 
@@ -98,23 +106,70 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
       templateId: selectedTemplate?.id || 'custom',
       templateName: selectedTemplate?.name || 'Custom',
       generalDescription,
-      generalImageUrl: generalImageFile ? URL.createObjectURL(generalImageFile) : null,
+      generalImageFile,
+      generalImageUrl: generalImageFile
+        ? URL.createObjectURL(generalImageFile)
+        : existingGeneralImageUrl,
       dynamicFields: Object.keys(selectedFields)
         .filter(k => selectedFields[k])
         .map(k => {
-          const tplField = selectedTemplate.fields.find(f => f.key === k);
+          const tplField = selectedTemplate?.fields?.find(f => f.key === k) || { label: k };
           return {
             key: k,
-            label: tplField.label,
+            label: tplField.label || k,
             description: fieldData[k]?.description || '',
-            imageUrl: fieldData[k]?.imageFile ? URL.createObjectURL(fieldData[k].imageFile) : null
+            imageFile: fieldData[k]?.imageFile || null,
+            imageUrl: fieldData[k]?.imageFile
+              ? URL.createObjectURL(fieldData[k].imageFile)
+              : (fieldData[k]?.imageUrl || null)
           };
         }),
-      extraImageUrls: additionalFiles.filter(f => !f.type.toLowerCase().includes('pdf') && !f.name.toLowerCase().endsWith('.pdf')).map(f => URL.createObjectURL(f)),
-      extraPdfCount: additionalFiles.filter(f => f.type.toLowerCase().includes('pdf') || f.name.toLowerCase().endsWith('.pdf')).length,
+      extraImageUrls: [
+        ...existingExtraImageUrls,
+        ...additionalFiles
+          .filter(f => !f.type?.toLowerCase().includes('pdf') && !f.name?.toLowerCase().endsWith('.pdf'))
+          .map(f => URL.createObjectURL(f))
+      ],
+      extraPdfCount: additionalFiles.filter(f => f.type?.toLowerCase().includes('pdf') || f.name?.toLowerCase().endsWith('.pdf')).length,
       docketNumber: existingDocket ? existingDocket.docketNumber : 'PREVIEW',
       storeAddress: currentStore?.address || ''
     };
+  };
+
+  const handleReviewConfiguration = async () => {
+    if (!selectedTemplate) return alert("Please select a template");
+    setLoading(true);
+    try {
+      const preview = generatePreviewDocket();
+      const [generalDataUrl, dynamicFieldsDataUrls, extraDataUrls] = await Promise.all([
+        loadRemoteImageAsDataUrl(preview.generalImageUrl).catch(() => preview.generalImageUrl),
+        Promise.all(
+          (preview.dynamicFields || []).map(async (f) => ({
+            ...f,
+            imageUrl: await loadRemoteImageAsDataUrl(f.imageUrl).catch(() => f.imageUrl)
+          }))
+        ),
+        Promise.all(
+          (preview.extraImageUrls || []).map((url) => loadRemoteImageAsDataUrl(url).catch(() => url))
+        )
+      ]);
+
+      const finalPreview = {
+        ...preview,
+        generalImageUrl: generalDataUrl,
+        dynamicFields: dynamicFieldsDataUrls,
+        extraImageUrls: extraDataUrls.filter(Boolean)
+      };
+
+      setPreviewPayload(finalPreview);
+      setStep(2);
+    } catch (err) {
+      console.error('Error preparing PDF preview:', err);
+      setPreviewPayload(generatePreviewDocket());
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -151,40 +206,34 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
   }
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col text-gray-800 dark:text-slate-100 transition-colors">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col transition-colors">
+        
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-slate-700">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-              {step === 1 ? (existingDocket ? 'Edit Product Docket' : 'Configure Product Docket') : step === 2 ? 'Review & Confirm Docket' : 'Docket Saved'}
+            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+              <FileText className="text-purple-600 dark:text-purple-400" size={20} />
+              {existingDocket ? 'Edit Production Docket' : 'Create Production Docket'}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400">For: {item?.name} {existingDocket && `(${existingDocket.docketNumber})`}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Order #{saleOrder.salesOrderNumber} - {item.name}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
             <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Content Body */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
           {!savedDocket && step === 1 && (
             <>
-              {existingDocket && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 p-4 rounded-lg flex gap-3 text-sm border border-amber-200 dark:border-amber-800/30">
-                  <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Editing Mode</h4>
-                    <p>Your descriptions have been pre-filled. However, previously uploaded images are not stored. <strong>You must re-attach any images you want included in the updated PDF.</strong></p>
-                  </div>
-                </div>
-              )}
               {/* Template Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Furniture Category</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {templates.map(tpl => (
                     <button
+                      type="button"
                       key={tpl.id}
                       onClick={() => setSelectedTemplate(tpl)}
                       className={`px-4 py-3 border rounded-xl text-sm font-medium transition-all ${
@@ -220,7 +269,12 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                       {generalImageFile ? (
                         <div className="relative">
                           <img src={URL.createObjectURL(generalImageFile)} alt="Reference" className="h-24 w-24 object-cover rounded-lg border border-gray-200" />
-                          <button onClick={() => setGeneralImageFile(null)} className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full"><X size={14}/></button>
+                          <button type="button" onClick={() => setGeneralImageFile(null)} className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full"><X size={14}/></button>
+                        </div>
+                      ) : existingGeneralImageUrl ? (
+                        <div className="relative">
+                          <img src={existingGeneralImageUrl} alt="Reference" className="h-24 w-24 object-cover rounded-lg border border-gray-200" />
+                          <button type="button" onClick={() => setExistingGeneralImageUrl(null)} className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full" title="Remove image"><X size={14}/></button>
                         </div>
                       ) : (
                         <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
@@ -264,7 +318,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                               <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Description</label>
                               <input
                                 type="text"
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg text-sm"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-slate-100"
                                 value={fieldData[field.key]?.description || ''}
                                 onChange={(e) => handleFieldDataChange(field.key, 'description', e.target.value)}
                                 placeholder={`Enter ${field.label.toLowerCase()} description...`}
@@ -276,10 +330,15 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                                 {fieldData[field.key]?.imageFile ? (
                                   <div className="relative">
                                     <img src={URL.createObjectURL(fieldData[field.key].imageFile)} alt={field.label} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
-                                    <button onClick={() => handleFieldDataChange(field.key, 'imageFile', null)} className="absolute -top-1 -right-1 bg-red-100 text-red-600 p-0.5 rounded-full"><X size={12}/></button>
+                                    <button type="button" onClick={() => handleFieldDataChange(field.key, 'imageFile', null)} className="absolute -top-1 -right-1 bg-red-100 text-red-600 p-0.5 rounded-full"><X size={12}/></button>
+                                  </div>
+                                ) : fieldData[field.key]?.imageUrl ? (
+                                  <div className="relative">
+                                    <img src={fieldData[field.key].imageUrl} alt={field.label} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
+                                    <button type="button" onClick={() => handleFieldDataChange(field.key, 'imageUrl', null)} className="absolute -top-1 -right-1 bg-red-100 text-red-600 p-0.5 rounded-full" title="Remove image"><X size={12}/></button>
                                   </div>
                                 ) : (
-                                  <label className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                                  <label className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600 text-sm text-gray-600 dark:text-slate-300">
                                     <ImageIcon size={16} /> Choose Image
                                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { 
                                       if(e.target.files[0]) {
@@ -317,15 +376,26 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                       }} />
                   </label>
                   
-                  {additionalFiles.length > 0 && (
+                  {(existingExtraImageUrls.length > 0 || additionalFiles.length > 0) && (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {existingExtraImageUrls.map((url, i) => (
+                        <div key={`existing-extra-${i}`} className="flex items-center justify-between p-2 bg-purple-50/50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <ImageIcon size={16} className="text-purple-600 shrink-0" />
+                            <span className="text-xs text-purple-900 dark:text-purple-200 truncate">Saved Image #{i + 1}</span>
+                          </div>
+                          <button type="button" onClick={() => setExistingExtraImageUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
                       {additionalFiles.map((file, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
+                        <div key={`new-extra-${i}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
                           <div className="flex items-center gap-2 overflow-hidden">
                             {file.type.includes('pdf') ? <FileText size={16} className="text-red-500 shrink-0" /> : <ImageIcon size={16} className="text-blue-500 shrink-0" />}
                             <span className="text-xs text-gray-700 dark:text-slate-300 truncate">{file.name}</span>
                           </div>
-                          <button onClick={() => setAdditionalFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2">
+                          <button type="button" onClick={() => setAdditionalFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -365,7 +435,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                     <FileText size={18} /> View PDF
                   </a>
                 )}
-                <button onClick={onClose} className="px-6 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-lg font-medium shadow transition-colors hover:bg-gray-200">
+                <button type="button" onClick={onClose} className="px-6 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-lg font-medium shadow transition-colors hover:bg-gray-200">
                   Close
                 </button>
               </div>
@@ -377,30 +447,29 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
         {!savedDocket && (
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
             {step === 2 && (
-              <button onClick={() => setStep(1)} disabled={loading} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+              <button type="button" onClick={() => setStep(1)} disabled={loading} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
                 Back to Edit
               </button>
             )}
             {step === 1 && (
-              <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
                 Cancel
               </button>
             )}
             
             {step === 1 ? (
               <button
-                onClick={() => {
-                  if (!selectedTemplate) return alert("Please select a template");
-                  setPreviewPayload(generatePreviewDocket());
-                  setStep(2);
-                }}
-                className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 hover:opacity-90"
+                type="button"
+                onClick={handleReviewConfiguration}
+                disabled={loading}
+                className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 hover:opacity-90"
                 style={{ background: '#875a7b' }}
               >
-                Review Configuration
+                {loading ? <><span className="spinner w-4 h-4 border-white border-2"></span> Loading Preview...</> : 'Review Configuration'}
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={loading}
                 className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 hover:opacity-90"

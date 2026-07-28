@@ -17,6 +17,7 @@ import { DocketPDF } from '../utils/docketPdfTemplate';
 import { PDFDocument } from 'pdf-lib';
 import React from 'react';
 import { compressImage } from '../utils/imageCompression';
+import { loadRemoteImageAsDataUrl } from '../utils/imageUtils';
 
 const DOCKETS_COL = 'dockets';
 const TEMPLATES_COL = 'docketTemplates';
@@ -49,6 +50,122 @@ const uploadFile = async (file, path, compress = false) => {
   return await getDownloadURL(fileRef);
 };
 
+// Helper for processing and uploading docket images to Firebase Storage
+const processDocketImages = async (docketData, docketNumber, timestamp) => {
+  let generalImageUrl = docketData.generalImageUrl || null;
+
+  // 1. General Image
+  if (docketData.generalImageFile) {
+    generalImageUrl = await uploadFile(
+      docketData.generalImageFile,
+      `dockets/images/${docketNumber}/general_${timestamp}.jpg`,
+      true
+    );
+  } else if (generalImageUrl && generalImageUrl.startsWith('blob:')) {
+    try {
+      const res = await fetch(generalImageUrl);
+      const blob = await res.blob();
+      generalImageUrl = await uploadFile(
+        blob,
+        `dockets/images/${docketNumber}/general_${timestamp}.jpg`,
+        true
+      );
+    } catch (e) {
+      console.warn('Failed to upload general image blob URL:', e);
+    }
+  }
+
+  // 2. Dynamic Field Images
+  const dynamicFields = await Promise.all(
+    (docketData.dynamicFields || []).map(async (field) => {
+      let imageUrl = field.imageUrl || null;
+      if (field.imageFile) {
+        imageUrl = await uploadFile(
+          field.imageFile,
+          `dockets/images/${docketNumber}/field_${field.key}_${timestamp}.jpg`,
+          true
+        );
+      } else if (imageUrl && imageUrl.startsWith('blob:')) {
+        try {
+          const res = await fetch(imageUrl);
+          const blob = await res.blob();
+          imageUrl = await uploadFile(
+            blob,
+            `dockets/images/${docketNumber}/field_${field.key}_${timestamp}.jpg`,
+            true
+          );
+        } catch (e) {
+          console.warn(`Failed to upload field ${field.key} image blob URL:`, e);
+        }
+      }
+      const { imageFile, ...restField } = field;
+      return {
+        ...restField,
+        imageUrl: imageUrl && !imageUrl.startsWith('blob:') ? imageUrl : null,
+      };
+    })
+  );
+
+  // 3. Additional Images from additionalFiles
+  const extraImageUrls = [];
+  if (docketData.additionalFiles) {
+    for (let i = 0; i < docketData.additionalFiles.length; i++) {
+      const file = docketData.additionalFiles[i];
+      const isPdf = file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
+      if (!isPdf && (file.type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name))) {
+        const uploadedUrl = await uploadFile(
+          file,
+          `dockets/images/${docketNumber}/extra_${i}_${timestamp}.jpg`,
+          true
+        );
+        if (uploadedUrl) extraImageUrls.push(uploadedUrl);
+      }
+    }
+  }
+
+  // Keep existing remote extraImageUrls if editing
+  if (docketData.extraImageUrls) {
+    for (const url of docketData.extraImageUrls) {
+      if (url && !url.startsWith('blob:')) {
+        extraImageUrls.push(url);
+      }
+    }
+  }
+
+  return {
+    generalImageUrl: generalImageUrl && !generalImageUrl.startsWith('blob:') ? generalImageUrl : null,
+    dynamicFields,
+    extraImageUrls,
+  };
+};
+
+const prepareDocketForPdf = async (docket) => {
+  try {
+    const [generalDataUrl, dynamicFieldsDataUrls, extraDataUrls] = await Promise.all([
+      loadRemoteImageAsDataUrl(docket.generalImageUrl),
+      Promise.all(
+        (docket.dynamicFields || []).map(async (f) => ({
+          ...f,
+          imageUrl: await loadRemoteImageAsDataUrl(f.imageUrl)
+        }))
+      ),
+      Promise.all(
+        (docket.extraImageUrls || []).map((url) => loadRemoteImageAsDataUrl(url))
+      )
+    ]);
+
+    return {
+      ...docket,
+      generalImageUrl: generalDataUrl,
+      dynamicFields: dynamicFieldsDataUrls,
+      extraImageUrls: extraDataUrls.filter(Boolean)
+    };
+  } catch (err) {
+    console.warn('Failed to prepare docket image data URLs for PDF:', err);
+    return docket;
+  }
+};
+
 export const createDocket = async (docketData) => {
   // First get the sequential docket number via transaction
   const docketNumData = await runTransaction(db, async (transaction) => {
@@ -68,18 +185,25 @@ export const createDocket = async (docketData) => {
   const { docketNumber } = docketNumData;
   const timestamp = Date.now();
 
-  // 1. Separate Extra PDFs from Docket Data (Images are already passed as object URLs in docketData)
+  // 1. Upload images to Firebase Storage
+  const { generalImageUrl, dynamicFields, extraImageUrls } = await processDocketImages(
+    docketData,
+    docketNumber,
+    timestamp
+  );
+
+  // 2. Separate Extra PDFs
   const extraPdfs = [];
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
       const file = docketData.additionalFiles[i];
-      if (file.type.toLowerCase().includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
+      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
         extraPdfs.push(file);
       }
     }
   }
 
-  // Construct final docket payload (excluding File objects)
+  // Construct final docket payload (with permanent Firebase Storage URLs)
   const finalDocket = {
     salesOrderId: docketData.salesOrderId,
     salesOrderNumber: docketData.salesOrderNumber,
@@ -89,22 +213,21 @@ export const createDocket = async (docketData) => {
     templateName: docketData.templateName,
     generalDescription: docketData.generalDescription,
     storeAddress: docketData.storeAddress || '',
-    // Note: These URLs are LOCAL Object URLs. We don't save them to Firestore, 
-    // but we use them to generate the PDF below.
-    generalImageUrl: docketData.generalImageUrl,
-    dynamicFields: docketData.dynamicFields,
-    extraImageUrls: docketData.extraImageUrls || [],
+    generalImageUrl,
+    dynamicFields,
+    extraImageUrls,
     extraPdfCount: extraPdfs.length,
     docketNumber,
     productionStatus: 'Pending',
     createdAt: serverTimestamp(),
   };
 
-  // 2. Generate the base PDF using @react-pdf/renderer
-  const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: finalDocket })).toBlob();
+  // 3. Generate the base PDF using @react-pdf/renderer
+  const pdfDocket = await prepareDocketForPdf(finalDocket);
+  const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: pdfDocket })).toBlob();
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
-  // 3. Merge with extra PDFs using pdf-lib
+  // 4. Merge with extra PDFs using pdf-lib
   let finalPdfBytes;
   if (extraPdfs.length > 0) {
     const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
@@ -123,19 +246,12 @@ export const createDocket = async (docketData) => {
     finalPdfBytes = basePdfArrayBuffer;
   }
 
-  // 4. Upload ONLY the final PDF to Firebase Storage
+  // 5. Upload final PDF to Firebase Storage
   const pdfBlobToUpload = new Blob([finalPdfBytes], { type: 'application/pdf' });
   const finalPdfUrl = await uploadFile(pdfBlobToUpload, `dockets/pdfs/${docketNumber}-${timestamp}.pdf`);
   
-  // 5. Clean up local Object URLs before saving to Firestore
+  // 6. Save docket object with images and PDF URL to Firestore
   const firestoreDocket = { ...finalDocket, pdfUrl: finalPdfUrl };
-  delete firestoreDocket.generalImageUrl; // Don't save local blob URLs to Firestore
-  firestoreDocket.dynamicFields = firestoreDocket.dynamicFields.map(f => {
-    const { imageUrl, ...rest } = f;
-    return rest;
-  });
-
-  // 6. Save to Firestore
   const newDocketRef = await addDoc(collection(db, DOCKETS_COL), firestoreDocket);
   
   return { id: newDocketRef.id, ...firestoreDocket };
@@ -152,11 +268,17 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const { docketNumber } = docketData;
   const timestamp = Date.now();
 
+  const { generalImageUrl, dynamicFields, extraImageUrls } = await processDocketImages(
+    docketData,
+    docketNumber,
+    timestamp
+  );
+
   const extraPdfs = [];
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
       const file = docketData.additionalFiles[i];
-      if (file.type.toLowerCase().includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
+      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
         extraPdfs.push(file);
       }
     }
@@ -171,16 +293,17 @@ export const updateDocketWithFiles = async (id, docketData) => {
     templateName: docketData.templateName,
     generalDescription: docketData.generalDescription,
     storeAddress: docketData.storeAddress || '',
-    generalImageUrl: docketData.generalImageUrl,
-    dynamicFields: docketData.dynamicFields,
-    extraImageUrls: docketData.extraImageUrls || [],
+    generalImageUrl,
+    dynamicFields,
+    extraImageUrls,
     extraPdfCount: extraPdfs.length,
     docketNumber,
     productionStatus: docketData.productionStatus || 'Pending',
     updatedAt: serverTimestamp(),
   };
 
-  const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: finalDocket })).toBlob();
+  const pdfDocket = await prepareDocketForPdf(finalDocket);
+  const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: pdfDocket })).toBlob();
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
   let finalPdfBytes;
@@ -205,11 +328,6 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const finalPdfUrl = await uploadFile(pdfBlobToUpload, `dockets/pdfs/${docketNumber}-${timestamp}.pdf`);
   
   const firestoreDocket = { ...finalDocket, pdfUrl: finalPdfUrl };
-  delete firestoreDocket.generalImageUrl; 
-  firestoreDocket.dynamicFields = firestoreDocket.dynamicFields.map(f => {
-    const { imageUrl, ...rest } = f;
-    return rest;
-  });
 
   await updateDoc(doc(db, DOCKETS_COL, id), firestoreDocket);
   

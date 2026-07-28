@@ -10,9 +10,13 @@ import {
   startAfter,
   serverTimestamp,
   runTransaction,
-  updateDoc
+  updateDoc,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from './firebase';
+import { compressImage } from '../utils/imageCompression';
 
 const SALES_ORDERS_COL = 'salesOrders';
 
@@ -52,6 +56,67 @@ export const updateSaleOrderStatus = async (id, status) => {
     status,
     updatedAt: serverTimestamp(),
   });
+};
+
+/** Upload Attachment (Proof, Screenshot, Document) to Sales Order */
+export const uploadSalesOrderAttachment = async (orderId, file, name = '') => {
+  if (!orderId || !file) throw new Error('Order ID and file are required');
+
+  let fileToUpload = file;
+  const isImage = file.type.startsWith('image/');
+  if (isImage) {
+    try {
+      fileToUpload = await compressImage(file);
+    } catch (err) {
+      console.warn('Image compression failed, using original file', err);
+    }
+  }
+
+  const timestamp = Date.now();
+  const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const storagePath = `salesOrders/${orderId}/${timestamp}_${safeFileName}`;
+  const fileRef = ref(storage, storagePath);
+
+  await uploadBytes(fileRef, fileToUpload);
+  const downloadUrl = await getDownloadURL(fileRef);
+
+  const attachmentData = {
+    id: `att_${timestamp}`,
+    name: name.trim() || file.name,
+    fileName: file.name,
+    storagePath,
+    url: downloadUrl,
+    fileType: isImage ? 'image' : file.type.includes('pdf') ? 'pdf' : 'document',
+    uploadedAt: new Date().toISOString(),
+  };
+
+  const orderRef = doc(db, SALES_ORDERS_COL, orderId);
+  await updateDoc(orderRef, {
+    attachments: arrayUnion(attachmentData),
+    updatedAt: serverTimestamp(),
+  });
+
+  return attachmentData;
+};
+
+/** Delete Attachment from Sales Order */
+export const deleteSalesOrderAttachment = async (orderId, attachment) => {
+  if (!orderId || !attachment) return;
+
+  const orderRef = doc(db, SALES_ORDERS_COL, orderId);
+  await updateDoc(orderRef, {
+    attachments: arrayRemove(attachment),
+    updatedAt: serverTimestamp(),
+  });
+
+  if (attachment.storagePath) {
+    try {
+      const fileRef = ref(storage, attachment.storagePath);
+      await deleteObject(fileRef);
+    } catch (err) {
+      console.warn('Failed to delete attachment from Firebase Storage:', err);
+    }
+  }
 };
 
 /** Convert Quotation to Sale Order (Atomic Transaction) */

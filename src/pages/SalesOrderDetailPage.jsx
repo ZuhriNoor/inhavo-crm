@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, CheckSquare, Shield, FileText, ExternalLink } from 'lucide-react';
-import { getSaleOrder, updateSaleOrderStatus } from '../services/salesOrdersService';
+import { ArrowLeft, Package, CheckSquare, Shield, FileText, ExternalLink, Paperclip, Plus, Trash2, Eye, Download, Image as ImageIcon } from 'lucide-react';
+import { getSaleOrder, updateSaleOrderStatus, deleteSalesOrderAttachment } from '../services/salesOrdersService';
 import { getDocketsBySaleOrder } from '../services/docketsService';
 import { getWarrantiesBySaleOrder } from '../services/warrantiesService';
 import LoadingScreen from '../components/shared/LoadingScreen';
 import DocketModal from '../components/dockets/DocketModal';
 import WarrantyModal from '../components/warranties/WarrantyModal';
+import SalesOrderAttachmentModal from '../components/salesOrders/SalesOrderAttachmentModal';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { DocketPDF } from '../utils/docketPdfTemplate';
 import { WarrantyPDF } from '../utils/warrantyPdfTemplate';
@@ -26,6 +27,9 @@ export default function SalesOrderDetailPage() {
   const [editingDocket, setEditingDocket] = useState(null);
   
   const [warrantyModalOpen, setWarrantyModalOpen] = useState(false);
+
+  const [attachmentModalOpen, setAttachmentModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const [docketTemplates, setDocketTemplates] = useState([]);
 
@@ -62,6 +66,17 @@ export default function SalesOrderDetailPage() {
       setOrder(prev => ({ ...prev, status: newStatus }));
     } catch (error) {
       console.error('Failed to update status', error);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment) => {
+    if (!confirm(`Delete attachment "${attachment.name}"?`)) return;
+    try {
+      await deleteSalesOrderAttachment(orderId, attachment);
+      fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete attachment', err);
+      alert('Failed to delete attachment');
     }
   };
 
@@ -229,6 +244,13 @@ export default function SalesOrderDetailPage() {
 
             {/* Sidebar Details */}
             <div className="space-y-6">
+              {/* Total Order Value */}
+              <div className="rounded-xl shadow-sm p-5 text-white transition-colors" style={{ background: '#875a7b' }}>
+                <p className="text-purple-100 text-sm mb-1">Total Order Value</p>
+                <p className="text-3xl font-bold">₹{(order.totalAmount || 0).toLocaleString('en-IN')}</p>
+              </div>
+
+              {/* Customer Details */}
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5 transition-colors">
                 <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4">Customer Details</h3>
                 <div className="space-y-3">
@@ -247,15 +269,92 @@ export default function SalesOrderDetailPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl shadow-sm p-5 text-white transition-colors" style={{ background: '#875a7b' }}>
-                <p className="text-purple-100 text-sm mb-1">Total Order Value</p>
-                <p className="text-3xl font-bold">₹{(order.totalAmount || 0).toLocaleString('en-IN')}</p>
+              {/* Attachments & Proofs Card */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Paperclip size={16} className="text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Attachments & Proofs
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setAttachmentModalOpen(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg font-medium border border-purple-200 dark:border-purple-800 transition-all"
+                  >
+                    <Plus size={13} /> Add Attachment
+                  </button>
+                </div>
+
+                {!order.attachments || order.attachments.length === 0 ? (
+                  <div className="text-center py-6 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl">
+                    <ImageIcon className="mx-auto h-8 w-8 text-gray-300 dark:text-slate-600 mb-1.5" />
+                    <p className="text-xs text-gray-400 dark:text-slate-500">No proof or attachments added yet.</p>
+                    <button
+                      onClick={() => setAttachmentModalOpen(true)}
+                      className="mt-2 text-xs text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                    >
+                      + Upload confirmation screenshot
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                    {order.attachments.map((att) => {
+                      const isImg = att.fileType === 'image' || att.url?.match(/\.(jpeg|jpg|gif|png|webp)/i);
+                      return (
+                        <div
+                          key={att.id || att.url}
+                          className="flex items-center gap-3 p-2.5 bg-gray-50/70 dark:bg-slate-700/40 border border-gray-200/80 dark:border-slate-700 rounded-xl group hover:border-purple-300 transition-all"
+                        >
+                          {isImg ? (
+                            <img
+                              src={att.url}
+                              alt={att.name}
+                              onClick={() => setPreviewImage(att)}
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-slate-600 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                              <FileText size={20} />
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-800 dark:text-slate-100 truncate">
+                              {att.name || att.fileName}
+                            </p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-400 truncate">
+                              {att.fileName}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors"
+                              title="Open file"
+                            >
+                              <ExternalLink size={13} />
+                            </a>
+                            <button
+                              onClick={() => handleDeleteAttachment(att)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors"
+                              title="Delete attachment"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
-
-
 
         {activeTab === 'warranties' && (
           <div>
@@ -328,6 +427,39 @@ export default function SalesOrderDetailPage() {
           saleOrder={order}
           onWarrantyCreated={() => fetchData(true)}
         />
+      )}
+
+      {attachmentModalOpen && (
+        <SalesOrderAttachmentModal
+          orderId={orderId}
+          isOpen={attachmentModalOpen}
+          onClose={() => setAttachmentModalOpen(false)}
+          onUploaded={() => fetchData(true)}
+        />
+      )}
+
+      {/* Image Lightbox Modal */}
+      {previewImage && (
+        <div
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] p-2" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-3 -right-3 p-2 rounded-full bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 shadow-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              <ArrowLeft size={0} className="hidden" /> {/* fallback */}
+              ✕
+            </button>
+            <img
+              src={previewImage.url}
+              alt={previewImage.name}
+              className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl mx-auto"
+            />
+            <p className="text-center text-xs text-white mt-2 font-medium">{previewImage.name}</p>
+          </div>
+        </div>
       )}
     </div>
   );
