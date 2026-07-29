@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Users, Store, GitBranch, FileText, Shield, Building2 } from 'lucide-react';
+import { Users, Store, GitBranch, FileText, Shield, Building2, FileSpreadsheet } from 'lucide-react';
 
 const TABS = [
   { to: '/admin/users', label: 'Users', icon: Users },
@@ -8,6 +8,7 @@ const TABS = [
   { to: '/admin/docket-templates', label: 'Docket Config', icon: FileText },
   { to: '/admin/warranty-config', label: 'Warranty Config', icon: Shield },
   { to: '/admin/vendors', label: 'Vendors', icon: Building2 },
+  { to: '/admin/exports', label: 'Data Exports', icon: FileSpreadsheet },
 ];
 
 const AdminDashboard = () => {

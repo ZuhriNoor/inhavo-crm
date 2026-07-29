@@ -25,6 +25,7 @@ import PipelinePage from './pages/admin/PipelinePage';
 import AdminDocketTemplatesPage from './pages/admin/AdminDocketTemplatesPage';
 import AdminWarrantyConfigPage from './pages/admin/AdminWarrantyConfigPage';
 import AdminVendorsPage from './pages/admin/AdminVendorsPage';
+import AdminDataExportsPage from './pages/admin/AdminDataExportsPage';
 
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import PWAUpdatePrompt from './components/shared/PWAUpdatePrompt';
@@ -92,6 +93,7 @@ const router = createBrowserRouter([
           { path: 'docket-templates', element: <AdminRoute><AdminDocketTemplatesPage /></AdminRoute> },
           { path: 'warranty-config', element: <AdminRoute><AdminWarrantyConfigPage /></AdminRoute> },
           { path: 'vendors', element: <AdminRoute><AdminVendorsPage /></AdminRoute> },
+          { path: 'exports', element: <AdminRoute><AdminDataExportsPage /></AdminRoute> },
         ],
       },
     ],

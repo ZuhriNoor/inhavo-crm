@@ -116,24 +116,24 @@ export default function SalesOrdersPage() {
           </div>
           
           {/* Pagination Controls */}
-          {!searchTerm && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-slate-400 mr-2">Page {currentPage + 1}</span>
-              <button
-                onClick={handlePrevPage}
-                disabled={currentPage === 0 || loading}
-                className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={!hasMore || loading}
-                className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            {!searchTerm && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-slate-400 mr-2">Page {currentPage + 1}</span>
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 0 || loading}
+                  className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={!hasMore || loading}
+                  className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
           )}
         </div>
       </div>

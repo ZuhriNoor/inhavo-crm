@@ -1,16 +1,11 @@
-// QuotationsPage — list of all quotations across the active store
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, ExternalLink, RefreshCw, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, ExternalLink, RefreshCw, Edit2, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
-import { getTasks } from '../services/tasksService';
 import { formatDate } from '../utils/helpers';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
 import QuotationModal from '../components/quotations/QuotationModal';
 import QuotationDetailModal from '../components/quotations/QuotationDetailModal';
-import { Plus } from 'lucide-react';
 
 const QuotationsPage = () => {
   const { activeStore } = useStore();
@@ -153,6 +148,8 @@ const QuotationsPage = () => {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
           
+
+
           <button
             onClick={() => {
               setEditingQuote(null);

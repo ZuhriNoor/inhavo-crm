@@ -22,6 +22,7 @@ import { formatDate } from '../utils/helpers';
 export default function SalesOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [order, setOrder] = useState(null);
   const [dockets, setDockets] = useState([]);
   const [warranties, setWarranties] = useState([]);

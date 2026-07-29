@@ -22,7 +22,6 @@ const DashboardPage = () => {
   // Lead modal
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [defaultStageId, setDefaultStageId] = useState(null);
-  const [isExporting, setIsExporting] = useState(false);
 
   const loadData = useCallback(async (showLoading = true) => {
     if (!activeStore) return;
@@ -52,54 +51,6 @@ const DashboardPage = () => {
   const handleAddLead = (stageId) => {
     setDefaultStageId(stageId);
     setShowLeadModal(true);
-  };
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    try {
-      const headers = [
-        'Lead ID', 'Opportunity Title', 'Customer Name', 'Company', 'Phone', 'Email', 
-        'Location', 'Source', 'Expected Revenue', 'Expected Closing Date', 'Priority', 'Looking For', 'Notes', 'Stage', 'Created At'
-      ];
-      
-      const rows = leads.map(l => {
-        const stageName = stages.find(s => s.id === l.stageId)?.name || '';
-        const date = l.createdAt?.toDate?.() ? l.createdAt.toDate() : (l.createdAt ? new Date(l.createdAt) : null);
-        const formattedDate = date ? `${String(date.getDate()).padStart(2,'0')}-${String(date.getMonth()+1).padStart(2,'0')}-${date.getFullYear()}` : '';
-        return [
-          `"${l.leadNumber || 'N/A'}"`,
-          `"${String(l.opportunityTitle || '').replace(/"/g, '""')}"`,
-          `"${String(l.customerName || '').replace(/"/g, '""')}"`,
-          `"${String(l.company || '').replace(/"/g, '""')}"`,
-          `"${String(l.phone || '').replace(/"/g, '""')}"`,
-          `"${String(l.email || '').replace(/"/g, '""')}"`,
-          `"${String(l.address || '').replace(/"/g, '""')}"`,
-          `"${String(l.source || '').replace(/"/g, '""')}"`,
-          l.expectedRevenue || 0,
-          `"${String(l.expectedClosingDate || '').replace(/"/g, '""')}"`,
-          l.priority || 0,
-          `"${String(l.lookingFor || '').replace(/"/g, '""')}"`,
-          `"${String(l.notes || '').replace(/"/g, '""')}"`,
-          `"${stageName}"`,
-          `"${formattedDate}"`
-        ].join(',');
-      });
-      
-      const csvContent = [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `leads_export_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   if (!activeStore) {
@@ -142,17 +93,6 @@ const DashboardPage = () => {
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
-
-          {/* Export */}
-          <button
-            onClick={handleExport}
-            disabled={loading || isExporting || leads.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50"
-            title="Export to CSV"
-          >
-            {isExporting ? <span className="spinner w-3.5 h-3.5 border-gray-500 dark:border-slate-400" /> : <Download size={15} />}
-            Export
           </button>
 
           {/* New Lead */}

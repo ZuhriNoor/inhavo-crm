@@ -609,6 +609,21 @@ export const updateDocketTemplate = async (id, data) => {
   await updateDoc(doc(db, TEMPLATES_COL, id), data);
 };
 
+export const getAllDockets = async (storeId) => {
+  let q;
+  if (storeId) {
+    q = query(
+      collection(db, DOCKETS_COL),
+      where('storeId', '==', storeId),
+      orderBy('createdAt', 'desc')
+    );
+  } else {
+    q = query(collection(db, DOCKETS_COL), orderBy('createdAt', 'desc'));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
 export const deleteDocketTemplate = async (id) => {
   const { deleteDoc } = await import('firebase/firestore');
   await deleteDoc(doc(db, TEMPLATES_COL, id));
