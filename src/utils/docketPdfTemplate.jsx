@@ -6,18 +6,18 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2 solid #6F4E37', paddingBottom: 15, marginBottom: 20 },
   logo: { width: 140, height: 40, objectFit: 'contain' },
   docketTitle: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginBottom: 4 },
-  section: { marginVertical: 10, padding: 12, backgroundColor: '#f8fafc', borderRadius: 4, border: '1 solid #e2e8f0' },
-  fieldLabel: { fontSize: 8, color: '#64748b', textTransform: 'uppercase', marginBottom: 2 },
-  fieldValue: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a' },
-  descriptionBox: { fontSize: 10, color: '#334155', lineHeight: 1.4, marginTop: 4 },
+  section: { marginVertical: 10, padding: 12, backgroundColor: '#f8fafc', borderRadius: 4, border: '1 solid #cbd5e1' },
+  fieldLabel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#475569', textTransform: 'uppercase', marginBottom: 3 },
+  fieldValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: '#0f172a' },
+  descriptionBox: { fontSize: 13, color: '#0f172a', lineHeight: 1.45, marginTop: 4 },
   generalPhoto: { width: '100%', height: 250, objectFit: 'contain', marginVertical: 10, border: '1 solid #cbd5e1', backgroundColor: '#ffffff' },
   
   // Grid layout styles
   gridContainer: { flexDirection: 'row', width: '100%' },
   gridCell: { width: '50%', height: 320, padding: 10 },
-  gridCellInner: { border: '1 solid #e2e8f0', borderRadius: 6, padding: 10, height: '100%', backgroundColor: '#f8fafc', overflow: 'hidden' },
-  cellTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginBottom: 4 },
-  cellDesc: { fontSize: 9, color: '#475569', marginBottom: 8, lineHeight: 1.3 },
+  gridCellInner: { border: '1 solid #cbd5e1', borderRadius: 6, padding: 10, height: '100%', backgroundColor: '#f8fafc', overflow: 'hidden' },
+  cellTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: '#6F4E37', marginBottom: 5 },
+  cellDesc: { fontSize: 13, color: '#0f172a', marginBottom: 8, lineHeight: 1.4 },
   cellPhoto: { flex: 1, width: '100%', objectFit: 'contain', border: '1 solid #e2e8f0', backgroundColor: '#ffffff' }
 });
 

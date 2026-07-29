@@ -14,44 +14,181 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { pdf } from '@react-pdf/renderer';
 import { DocketPDF } from '../utils/docketPdfTemplate';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import React from 'react';
 import { compressImage } from '../utils/imageCompression';
 import { loadRemoteImageAsDataUrl, toProxiedUrl } from '../utils/imageUtils';
 
-// Helper to stamp continuous page numbers ("Page X of Y") over all pages of merged PDF
-const applyContinuousPageNumbers = async (pdfDoc) => {
+const stampRotatedText = (page, {
+  text,
+  font,
+  fontSize,
+  textColor,
+  bgColor,
+  borderColor,
+  W,
+  H,
+  rot,
+  visualPos,
+  marginV,
+  marginH,
+  textWidth,
+}) => {
+  const padX = 10;
+  const padY = 5;
+  const boxW = textWidth + padX * 2;
+  const boxH = fontSize + padY * 2;
+
+  let x = 0;
+  let y = 0;
+  let rectX = 0;
+  let rectY = 0;
+  let rectW = boxW;
+  let rectH = boxH;
+  let angle = 0;
+
+  if (rot === 0) {
+    angle = 0;
+    if (visualPos === 'bottom-right') {
+      x = W - textWidth - marginH;
+      y = marginV;
+    } else if (visualPos === 'top-center') {
+      x = (W - textWidth) / 2;
+      y = H - marginV - fontSize;
+    } else if (visualPos === 'top-left') {
+      x = marginH;
+      y = H - marginV - fontSize;
+    }
+    rectX = x - padX;
+    rectY = y - padY;
+    rectW = boxW;
+    rectH = boxH;
+  } else if (rot === 90) {
+    angle = 90;
+    if (visualPos === 'bottom-right') {
+      x = marginV;
+      y = marginH + textWidth;
+    } else if (visualPos === 'top-center') {
+      x = W - marginV - fontSize;
+      y = (H - textWidth) / 2 + textWidth;
+    } else if (visualPos === 'top-left') {
+      x = W - marginV - fontSize;
+      y = H - marginH;
+    }
+    rectX = x - padY;
+    rectY = y - textWidth - padX;
+    rectW = boxH;
+    rectH = boxW;
+  } else if (rot === 180) {
+    angle = 180;
+    if (visualPos === 'bottom-right') {
+      x = marginH + textWidth;
+      y = H - marginV;
+    } else if (visualPos === 'top-center') {
+      x = (W + textWidth) / 2;
+      y = marginV + fontSize;
+    } else if (visualPos === 'top-left') {
+      x = W - marginH;
+      y = marginV + fontSize;
+    }
+    rectX = x + padX;
+    rectY = y + padY;
+    rectW = boxW;
+    rectH = boxH;
+  } else if (rot === 270) {
+    angle = 270;
+    if (visualPos === 'bottom-right') {
+      x = W - marginV;
+      y = H - marginH - textWidth;
+    } else if (visualPos === 'top-center') {
+      x = marginV + fontSize;
+      y = (H + textWidth) / 2 - textWidth;
+    } else if (visualPos === 'top-left') {
+      x = marginV + fontSize;
+      y = marginH;
+    }
+    rectX = x + padY;
+    rectY = y + padX;
+    rectW = boxH;
+    rectH = boxW;
+  }
+
+  if (bgColor) {
+    page.drawRectangle({
+      x: rectX,
+      y: rectY,
+      width: rectW,
+      height: rectH,
+      color: bgColor,
+      borderColor: borderColor || undefined,
+      borderWidth: borderColor ? 1 : 0,
+      rotate: degrees(angle),
+    });
+  }
+
+  page.drawText(text, {
+    x,
+    y,
+    size: fontSize,
+    font,
+    color: textColor,
+    rotate: degrees(angle),
+  });
+};
+
+// Helper to stamp continuous page numbers ("Page X of Y") & attachment titles over all pages of merged PDF
+const applyContinuousPageNumbers = async (pdfDoc, attachmentTitlesMap = new Map()) => {
   const totalPages = pdfDoc.getPageCount();
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   for (let i = 0; i < totalPages; i++) {
     const page = pdfDoc.getPage(i);
-    const { width } = page.getSize();
+    const { width: W, height: H } = page.getSize();
+    const rot = (page.getRotation().angle % 360 + 360) % 360;
+
+    // 1. Stamp Attachment Title at visual top-center (if this page belongs to an attached PDF)
+    const attachmentTitle = attachmentTitlesMap.get(i);
+    if (attachmentTitle) {
+      const titleText = `ATTACHMENT: ${attachmentTitle.toUpperCase()}`;
+      const titleFontSize = 13;
+      const titleWidth = fontBold.widthOfTextAtSize(titleText, titleFontSize);
+
+      stampRotatedText(page, {
+        text: titleText,
+        font: fontBold,
+        fontSize: titleFontSize,
+        textColor: rgb(0.435, 0.306, 0.216), // Brand Brown (#6F4E37)
+        bgColor: rgb(1, 1, 1),
+        borderColor: rgb(0.7, 0.7, 0.7),
+        W,
+        H,
+        rot,
+        visualPos: 'top-center',
+        marginV: 18,
+        marginH: 25,
+        textWidth: titleWidth,
+      });
+    }
+
+    // 2. Stamp Continuous Page Number ("Page X of Y") at visual bottom-right
     const pageText = `Page ${i + 1} of ${totalPages}`;
-    const fontSize = 12;
+    const fontSize = 11;
     const textWidth = fontBold.widthOfTextAtSize(pageText, fontSize);
 
-    const marginRight = 30;
-    const marginBottom = 18;
-    const xPos = width - textWidth - marginRight;
-    const yPos = marginBottom;
-
-    // Solid white mask to cover existing page numbers / background content cleanly
-    page.drawRectangle({
-      x: xPos - 6,
-      y: yPos - 4,
-      width: textWidth + 12,
-      height: fontSize + 8,
-      color: rgb(1, 1, 1),
-    });
-
-    // Stamp continuous page number
-    page.drawText(pageText, {
-      x: xPos,
-      y: yPos,
-      size: fontSize,
+    stampRotatedText(page, {
+      text: pageText,
       font: fontBold,
-      color: rgb(0, 0, 0),
+      fontSize,
+      textColor: rgb(0, 0, 0),
+      bgColor: rgb(1, 1, 1),
+      borderColor: null,
+      W,
+      H,
+      rot,
+      visualPos: 'bottom-right',
+      marginV: 16,
+      marginH: 25,
+      textWidth,
     });
   }
 
@@ -151,7 +288,9 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
 
   if (docketData.additionalFiles) {
     for (let i = 0; i < docketData.additionalFiles.length; i++) {
-      const file = docketData.additionalFiles[i];
+      const fileObj = docketData.additionalFiles[i];
+      const file = fileObj.file || fileObj;
+      const title = fileObj.title || file.name?.replace(/\.pdf$/i, '') || 'Attachment PDF';
       const isPdf = file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
       if (!isPdf && (file.type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name))) {
         const uploadedUrl = await uploadFile(
@@ -167,7 +306,7 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
           false
         );
         if (uploadedUrl) {
-          extraPdfUrls.push({ name: file.name, url: uploadedUrl });
+          extraPdfUrls.push({ name: title, url: uploadedUrl });
         }
       }
     }
@@ -187,7 +326,7 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
     for (const item of docketData.existingExtraPdfUrls) {
       if (item) {
         if (typeof item === 'string' && !item.startsWith('blob:')) {
-          extraPdfUrls.push({ name: 'Attachment.pdf', url: item });
+          extraPdfUrls.push({ name: 'Attachment PDF', url: item });
         } else if (typeof item === 'object' && item.url && !item.url.startsWith('blob:')) {
           extraPdfUrls.push(item);
         }
@@ -256,17 +395,6 @@ export const createDocket = async (docketData) => {
     timestamp
   );
 
-  // Separate newly added local PDF files
-  const localExtraPdfs = [];
-  if (docketData.additionalFiles) {
-    for (let i = 0; i < docketData.additionalFiles.length; i++) {
-      const file = docketData.additionalFiles[i];
-      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
-        localExtraPdfs.push(file);
-      }
-    }
-  }
-
   // Construct final docket payload (with permanent Firebase Storage URLs)
   const finalDocket = {
     salesOrderId: docketData.salesOrderId,
@@ -293,26 +421,34 @@ export const createDocket = async (docketData) => {
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
   // 3. Load PDF ArrayBuffers for all extra PDFs (newly added local files + existing remote PDF URLs)
-  const extraPdfBuffers = [];
-  for (const file of localExtraPdfs) {
-    try {
-      const buf = await file.arrayBuffer();
-      extraPdfBuffers.push(buf);
-    } catch (err) {
-      console.error('Failed to read local PDF buffer:', file.name, err);
+  const extraPdfItems = [];
+
+  if (docketData.additionalFiles) {
+    for (const fileObj of docketData.additionalFiles) {
+      const file = fileObj.file || fileObj;
+      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
+        try {
+          const title = fileObj.title || file.name?.replace(/\.pdf$/i, '') || 'Attached PDF';
+          const buf = await file.arrayBuffer();
+          extraPdfItems.push({ title, buffer: buf });
+        } catch (err) {
+          console.error('Failed to read local PDF buffer:', file.name, err);
+        }
+      }
     }
   }
 
   if (docketData.existingExtraPdfUrls) {
     for (const item of docketData.existingExtraPdfUrls) {
       const url = typeof item === 'object' ? item.url : item;
+      const title = (typeof item === 'object' ? item.name : '') || 'Attachment PDF';
       if (url && !url.startsWith('blob:')) {
         try {
           const fetchUrl = toProxiedUrl(url);
           const res = await fetch(fetchUrl);
           if (res.ok) {
             const buf = await res.arrayBuffer();
-            extraPdfBuffers.push(buf);
+            extraPdfItems.push({ title, buffer: buf });
           }
         } catch (err) {
           console.error('Failed to download existing extra PDF from Storage:', url, err);
@@ -323,16 +459,24 @@ export const createDocket = async (docketData) => {
 
   // 4. Merge all PDF buffers into base PDF
   const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
-  for (const pdfBuf of extraPdfBuffers) {
+  const attachmentTitlesMap = new Map();
+
+  for (const pdfItem of extraPdfItems) {
     try {
-      const extraPdfDoc = await PDFDocument.load(pdfBuf, { ignoreEncryption: true });
+      const extraPdfDoc = await PDFDocument.load(pdfItem.buffer, { ignoreEncryption: true });
       const copiedPages = await mergedPdf.copyPages(extraPdfDoc, extraPdfDoc.getPageIndices());
-      copiedPages.forEach(page => mergedPdf.addPage(page));
+      copiedPages.forEach(page => {
+        mergedPdf.addPage(page);
+        const pageIdx = mergedPdf.getPageCount() - 1;
+        if (pdfItem.title) {
+          attachmentTitlesMap.set(pageIdx, pdfItem.title);
+        }
+      });
     } catch (err) {
       console.error('Failed to merge extra PDF buffer:', err);
     }
   }
-  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf);
+  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf, attachmentTitlesMap);
 
   // 5. Upload final PDF to Firebase Storage
   const pdfBlobToUpload = new Blob([finalPdfBytes], { type: 'application/pdf' });
@@ -362,16 +506,6 @@ export const updateDocketWithFiles = async (id, docketData) => {
     timestamp
   );
 
-  const localExtraPdfs = [];
-  if (docketData.additionalFiles) {
-    for (let i = 0; i < docketData.additionalFiles.length; i++) {
-      const file = docketData.additionalFiles[i];
-      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
-        localExtraPdfs.push(file);
-      }
-    }
-  }
-
   const finalDocket = {
     salesOrderId: docketData.salesOrderId,
     salesOrderNumber: docketData.salesOrderNumber,
@@ -395,26 +529,34 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const basePdfBlob = await pdf(React.createElement(DocketPDF, { docket: pdfDocket })).toBlob();
   const basePdfArrayBuffer = await basePdfBlob.arrayBuffer();
 
-  const extraPdfBuffers = [];
-  for (const file of localExtraPdfs) {
-    try {
-      const buf = await file.arrayBuffer();
-      extraPdfBuffers.push(buf);
-    } catch (err) {
-      console.error('Failed to read local PDF buffer:', file.name, err);
+  const extraPdfItems = [];
+
+  if (docketData.additionalFiles) {
+    for (const fileObj of docketData.additionalFiles) {
+      const file = fileObj.file || fileObj;
+      if (file.type?.toLowerCase().includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
+        try {
+          const title = fileObj.title || file.name?.replace(/\.pdf$/i, '') || 'Attached PDF';
+          const buf = await file.arrayBuffer();
+          extraPdfItems.push({ title, buffer: buf });
+        } catch (err) {
+          console.error('Failed to read local PDF buffer:', file.name, err);
+        }
+      }
     }
   }
 
   if (docketData.existingExtraPdfUrls) {
     for (const item of docketData.existingExtraPdfUrls) {
       const url = typeof item === 'object' ? item.url : item;
+      const title = (typeof item === 'object' ? item.name : '') || 'Attachment PDF';
       if (url && !url.startsWith('blob:')) {
         try {
           const fetchUrl = toProxiedUrl(url);
           const res = await fetch(fetchUrl);
           if (res.ok) {
             const buf = await res.arrayBuffer();
-            extraPdfBuffers.push(buf);
+            extraPdfItems.push({ title, buffer: buf });
           }
         } catch (err) {
           console.error('Failed to download existing extra PDF from Storage:', url, err);
@@ -424,16 +566,24 @@ export const updateDocketWithFiles = async (id, docketData) => {
   }
 
   const mergedPdf = await PDFDocument.load(basePdfArrayBuffer);
-  for (const pdfBuf of extraPdfBuffers) {
+  const attachmentTitlesMap = new Map();
+
+  for (const pdfItem of extraPdfItems) {
     try {
-      const extraPdfDoc = await PDFDocument.load(pdfBuf, { ignoreEncryption: true });
+      const extraPdfDoc = await PDFDocument.load(pdfItem.buffer, { ignoreEncryption: true });
       const copiedPages = await mergedPdf.copyPages(extraPdfDoc, extraPdfDoc.getPageIndices());
-      copiedPages.forEach(page => mergedPdf.addPage(page));
+      copiedPages.forEach(page => {
+        mergedPdf.addPage(page);
+        const pageIdx = mergedPdf.getPageCount() - 1;
+        if (pdfItem.title) {
+          attachmentTitlesMap.set(pageIdx, pdfItem.title);
+        }
+      });
     } catch (err) {
       console.error('Failed to merge extra PDF buffer:', err);
     }
   }
-  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf);
+  const finalPdfBytes = await applyContinuousPageNumbers(mergedPdf, attachmentTitlesMap);
 
   const pdfBlobToUpload = new Blob([finalPdfBytes], { type: 'application/pdf' });
   const finalPdfUrl = await uploadFile(pdfBlobToUpload, `dockets/pdfs/${docketNumber}-${timestamp}.pdf`);

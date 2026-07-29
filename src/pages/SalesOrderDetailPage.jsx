@@ -211,7 +211,13 @@ export default function SalesOrderDetailPage() {
                       
                       <div className="flex justify-end gap-2 pt-1">
                         {(() => {
-                          const existingDocket = dockets.find(d => d.productDetails?.name === item.name);
+                          const existingDocket = dockets.find(d => {
+                            if (!d.productDetails) return false;
+                            if (Array.isArray(d.productDetails)) {
+                              return d.productDetails.some(pd => pd?.name === item.name);
+                            }
+                            return d.productDetails.name === item.name;
+                          });
                           if (existingDocket) {
                             return (
                               <>
@@ -261,7 +267,13 @@ export default function SalesOrderDetailPage() {
                           <td className="px-5 py-3 text-right font-medium text-gray-900 dark:text-slate-100">₹{(Number(item.qty || 0) * Number(item.unitPrice || 0)).toLocaleString('en-IN')}</td>
                           <td className="px-5 py-3 text-center">
                             {(() => {
-                              const existingDocket = dockets.find(d => d.productDetails?.name === item.name);
+                              const existingDocket = dockets.find(d => {
+                                if (!d.productDetails) return false;
+                                if (Array.isArray(d.productDetails)) {
+                                  return d.productDetails.some(pd => pd?.name === item.name);
+                                }
+                                return d.productDetails.name === item.name;
+                              });
                               const assignedPo = purchaseOrders.find(po => po.status !== 'Cancelled' && po.items?.some(pi => pi.name === item.name));
                               return (
                                 <div className="flex flex-col gap-1.5 items-center">

@@ -98,20 +98,25 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
     }));
   };
 
+  const getFileObject = (item) => (item?.file ? item.file : item);
+  const isPdfItem = (item) => {
+    const f = getFileObject(item);
+    return f?.type?.toLowerCase().includes('pdf') || f?.name?.toLowerCase().endsWith('.pdf');
+  };
+
   const generatePreviewDocket = () => {
+    const productDetails = item
+      ? { name: item.name, qty: item.qty, description: item.description || '' }
+      : (existingDocket?.productDetails || (saleOrder?.items?.[0] ? { name: saleOrder.items[0].name, qty: saleOrder.items[0].qty } : { name: '', qty: 1 }));
+
     return {
       salesOrderId: saleOrder.id,
       salesOrderNumber: saleOrder.salesOrderNumber,
-      productDetails: {
-        name: item.name,
-        qty: item.qty,
-        description: item.description || ''
-      },
       customerDetails: saleOrder.customerDetails,
-      templateId: selectedTemplate?.id || 'custom',
-      templateName: selectedTemplate?.name || 'Custom',
+      productDetails,
+      templateId: selectedTemplate?.id || '',
+      templateName: selectedTemplate?.name || '',
       generalDescription,
-      generalImageFile,
       generalImageUrl: generalImageFile
         ? URL.createObjectURL(generalImageFile)
         : existingGeneralImageUrl,
@@ -132,10 +137,10 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
       extraImageUrls: [
         ...existingExtraImageUrls,
         ...additionalFiles
-          .filter(f => !f.type?.toLowerCase().includes('pdf') && !f.name?.toLowerCase().endsWith('.pdf'))
-          .map(f => URL.createObjectURL(f))
+          .filter(item => !isPdfItem(item))
+          .map(item => URL.createObjectURL(getFileObject(item)))
       ],
-      extraPdfCount: additionalFiles.filter(f => f.type?.toLowerCase().includes('pdf') || f.name?.toLowerCase().endsWith('.pdf')).length,
+      extraPdfCount: (existingExtraPdfUrls?.length || 0) + additionalFiles.filter(item => isPdfItem(item)).length,
       docketNumber: existingDocket ? existingDocket.docketNumber : 'PREVIEW',
       deliveryDate: deliveryDate || '',
       storeAddress: currentStore?.address || ''
@@ -148,9 +153,9 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
     try {
       const preview = generatePreviewDocket();
 
-      const imageFilesList = additionalFiles.filter(
-        f => !f.type?.toLowerCase().includes('pdf') && !f.name?.toLowerCase().endsWith('.pdf')
-      );
+      const imageFilesList = additionalFiles
+        .filter(item => !isPdfItem(item))
+        .map(item => getFileObject(item));
 
       const [generalDataUrl, dynamicFieldsDataUrls, extraDataUrls] = await Promise.all([
         generalImageFile
@@ -392,21 +397,28 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                   <label className="flex justify-center w-full h-16 px-4 transition bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none">
                       <span className="flex items-center space-x-2">
                           <Upload className="w-5 h-5 text-gray-400" />
-                          <span className="font-medium text-gray-600 dark:text-slate-300">Click to upload additional files</span>
+                          <span className="font-medium text-gray-600 dark:text-slate-300">Click to upload additional files (Images & PDFs)</span>
                       </span>
                       <input type="file" name="file_upload" className="hidden" multiple accept="image/*,application/pdf" onChange={async (e) => {
-                        if(e.target.files) {
+                        if (e.target.files) {
                           const files = Array.from(e.target.files);
-                          const compressedFiles = await Promise.all(files.map(f => compressImageFile(f)));
-                          setAdditionalFiles(prev => [...prev, ...compressedFiles]);
+                          const processed = await Promise.all(files.map(async f => {
+                            const isPdf = f.type?.toLowerCase().includes('pdf') || f.name?.toLowerCase().endsWith('.pdf');
+                            if (isPdf) {
+                              return { file: f, title: f.name.replace(/\.pdf$/i, '') };
+                            } else {
+                              return await compressImageFile(f);
+                            }
+                          }));
+                          setAdditionalFiles(prev => [...prev, ...processed]);
                         }
                       }} />
                   </label>
                   
                   {(existingExtraImageUrls.length > 0 || existingExtraPdfUrls.length > 0 || additionalFiles.length > 0) && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                       {existingExtraImageUrls.map((url, i) => (
-                        <div key={`existing-extra-img-${i}`} className="flex items-center justify-between p-2 bg-purple-50/50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <div key={`existing-extra-img-${i}`} className="flex items-center justify-between p-2.5 bg-purple-50/50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800">
                           <div className="flex items-center gap-2 overflow-hidden">
                             <ImageIcon size={16} className="text-purple-600 shrink-0" />
                             <span className="text-xs text-purple-900 dark:text-purple-200 truncate">Saved Image #{i + 1}</span>
@@ -417,33 +429,88 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                         </div>
                       ))}
                       {existingExtraPdfUrls.map((item, i) => {
-                        const name = typeof item === 'object' ? item.name : `Saved PDF #${i + 1}`;
+                        const name = typeof item === 'object' ? (item.name || `Saved PDF #${i + 1}`) : `Saved PDF #${i + 1}`;
                         const url = typeof item === 'object' ? item.url : item;
                         return (
-                          <div key={`existing-extra-pdf-${i}`} className="flex items-center justify-between p-2 bg-red-50/50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <FileText size={16} className="text-red-600 shrink-0" />
-                              <a href={url} target="_blank" rel="noreferrer" className="text-xs text-red-900 dark:text-red-200 truncate hover:underline" title="Open saved PDF">
-                                {name}
-                              </a>
+                          <div key={`existing-extra-pdf-${i}`} className="flex flex-col gap-1.5 p-2.5 bg-red-50/50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-800">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <FileText size={16} className="text-red-600 shrink-0" />
+                                <a href={url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-red-900 dark:text-red-200 truncate hover:underline" title="Open saved PDF">
+                                  {name}
+                                </a>
+                              </div>
+                              <button type="button" onClick={() => setExistingExtraPdfUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
+                                <Trash2 size={14} />
+                              </button>
                             </div>
-                            <button type="button" onClick={() => setExistingExtraPdfUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
+                            <div>
+                              <label className="block text-[10px] font-semibold text-red-700/80 dark:text-red-300 uppercase tracking-wider mb-0.5">
+                                PDF Title (Stamped on PDF)
+                              </label>
+                              <input
+                                type="text"
+                                value={typeof item === 'object' ? (item.name || '') : name}
+                                onChange={(e) => {
+                                  const newTitle = e.target.value;
+                                  setExistingExtraPdfUrls(prev => prev.map((it, idx) => idx === i ? (typeof it === 'object' ? { ...it, name: newTitle } : { url: it, name: newTitle }) : it));
+                                }}
+                                placeholder="Title (e.g. Architectural Plan)..."
+                                className="w-full px-2 py-1 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-700/60 rounded text-xs text-gray-900 dark:text-slate-100 focus:outline-none focus:border-red-500"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {additionalFiles.map((fileObj, i) => {
+                        const isPdfObj = fileObj?.file || fileObj?.type?.includes('pdf') || fileObj?.name?.endsWith('.pdf');
+                        const file = fileObj?.file || fileObj;
+                        const isPdf = isPdfObj || file?.type?.includes('pdf') || file?.name?.endsWith('.pdf');
+
+                        if (isPdf) {
+                          const currentTitle = fileObj?.title !== undefined ? fileObj.title : (file.name?.replace(/\.pdf$/i, '') || '');
+                          return (
+                            <div key={`new-extra-pdf-${i}`} className="flex flex-col gap-1.5 p-2.5 bg-red-50/50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-800">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <FileText size={16} className="text-red-600 shrink-0" />
+                                  <span className="text-xs font-semibold text-red-900 dark:text-red-200 truncate">{file.name}</span>
+                                </div>
+                                <button type="button" onClick={() => setAdditionalFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-red-700/80 dark:text-red-300 uppercase tracking-wider mb-0.5">
+                                  PDF Title (Stamped on PDF)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={currentTitle}
+                                  onChange={(e) => {
+                                    const newTitle = e.target.value;
+                                    setAdditionalFiles(prev => prev.map((item, idx) => idx === i ? (item.file ? { ...item, title: newTitle } : { file: item, title: newTitle }) : item));
+                                  }}
+                                  placeholder="Title (e.g. Electrical Plan)..."
+                                  className="w-full px-2 py-1 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-700/60 rounded text-xs text-gray-900 dark:text-slate-100 focus:outline-none focus:border-red-500"
+                                />
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={`new-extra-img-${i}`} className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-700 rounded-xl border border-gray-200 dark:border-slate-600">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <ImageIcon size={16} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-gray-700 dark:text-slate-300 truncate">{file.name}</span>
+                            </div>
+                            <button type="button" onClick={() => setAdditionalFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2" title="Remove">
                               <Trash2 size={14} />
                             </button>
                           </div>
                         );
                       })}
-                      {additionalFiles.map((file, i) => (
-                        <div key={`new-extra-${i}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            {file.type.includes('pdf') ? <FileText size={16} className="text-red-500 shrink-0" /> : <ImageIcon size={16} className="text-blue-500 shrink-0" />}
-                            <span className="text-xs text-gray-700 dark:text-slate-300 truncate">{file.name}</span>
-                          </div>
-                          <button type="button" onClick={() => setAdditionalFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500 shrink-0 ml-2">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
                     </div>
                   )}
                 </div>
