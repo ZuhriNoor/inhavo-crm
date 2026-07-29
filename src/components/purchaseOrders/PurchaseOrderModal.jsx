@@ -166,17 +166,17 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
   const allItemsAssigned = items.length > 0 && items.every(it => it.disabled);
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col text-gray-800 dark:text-slate-100 transition-colors">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-gray-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] sm:max-h-[90vh] flex flex-col text-gray-800 dark:text-slate-100 transition-colors">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg">
               <Truck size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Create Purchase Order</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-100">Create Purchase Order</h2>
               <p className="text-xs text-gray-500 dark:text-slate-400">Ref SO: {saleOrder?.salesOrderNumber}</p>
             </div>
           </div>
@@ -186,29 +186,29 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {!savedPo ? (
             loadingVendors ? (
               <div className="py-12 flex items-center justify-center text-gray-500">
                 <RefreshCw className="animate-spin mr-2" size={20} /> Loading vendors list...
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 
                 {allItemsAssigned && (
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center gap-3">
-                    <Truck size={20} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="p-3.5 sm:p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-start sm:items-center gap-3">
+                    <Truck size={20} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
                     <div>
-                      <p className="font-bold text-sm">All Items Already Have Purchase Orders</p>
-                      <p className="mt-0.5">Every item in this order has an active PO assigned. To re-issue a PO for an item, delete its existing purchase order first.</p>
+                      <p className="font-bold text-xs sm:text-sm">All Items Already Have Purchase Orders</p>
+                      <p className="mt-0.5 text-[11px] sm:text-xs">Every item in this order has an active PO assigned. To re-issue a PO for an item, delete its existing purchase order first.</p>
                     </div>
                   </div>
                 )}
 
                 {/* Vendor & Delivery Date Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 sm:mb-2">
                       Select Vendor <span className="text-red-500">*</span>
                     </label>
                     {vendors.length === 0 ? (
@@ -220,7 +220,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                         value={selectedVendorId}
                         onChange={(e) => setSelectedVendorId(e.target.value)}
                         disabled={allItemsAssigned}
-                        className="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm text-gray-900 dark:text-slate-100 font-medium disabled:opacity-50"
+                        className="w-full px-3 py-2 sm:py-2.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-xs sm:text-sm text-gray-900 dark:text-slate-100 font-medium disabled:opacity-50"
                       >
                         {vendors.map(v => (
                           <option key={v.id} value={v.id}>
@@ -239,7 +239,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 sm:mb-2">
                       Required Delivery Date
                     </label>
                     <input
@@ -247,7 +247,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
                       disabled={allItemsAssigned}
-                      className="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm text-gray-900 dark:text-slate-100 disabled:opacity-50"
+                      className="w-full px-3 py-2 sm:py-2.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-xs sm:text-sm text-gray-900 dark:text-slate-100 disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -269,7 +269,8 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                     </label>
                   </div>
 
-                  <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
                     <table className="w-full text-left text-sm">
                       <thead className="bg-gray-50 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400">
                         <tr>
@@ -363,11 +364,125 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile Cards View */}
+                  <div className="block md:hidden space-y-3">
+                    {items.map((it, idx) => {
+                      const itemQty = Number(it.qty) || 0;
+                      const price = Number(it.unitPrice) || 0;
+                      const lineAmt = itemQty * price;
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3.5 rounded-xl border transition-all ${
+                            it.disabled
+                              ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/40'
+                              : !it.selected
+                              ? 'bg-gray-50/50 dark:bg-slate-900/30 border-gray-200 dark:border-slate-700 opacity-60'
+                              : 'bg-white dark:bg-slate-800 border-purple-200 dark:border-purple-800/60 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5 mb-2.5">
+                            <input
+                              type="checkbox"
+                              checked={it.selected}
+                              disabled={it.disabled}
+                              onChange={() => handleItemToggle(idx)}
+                              className="mt-0.5 w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-gray-300 disabled:opacity-40"
+                            />
+                            <div className="flex-1">
+                              <p className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-slate-100">{it.name}</p>
+                              {it.disabled && (
+                                <span className="inline-block mt-1 text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                                  PO Issued: {it.assignedPoNumber} ({it.assignedVendorName})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2.5 pl-6">
+                            <div>
+                              <label className="block text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Specifications / Specs
+                              </label>
+                              <input
+                                type="text"
+                                value={it.description}
+                                disabled={it.disabled}
+                                onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                                placeholder="Specifications, wood, fabric..."
+                                className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded text-xs text-gray-900 dark:text-slate-100 disabled:opacity-50"
+                              />
+                            </div>
+
+                            <div className={`grid gap-2 ${includeGst ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                  Qty
+                                </label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={it.qty}
+                                  disabled={it.disabled}
+                                  onChange={(e) => handleItemChange(idx, 'qty', parseInt(e.target.value) || 1)}
+                                  className="w-full px-2 py-1.5 text-center bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded text-xs text-gray-900 dark:text-slate-100 font-semibold disabled:opacity-50"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                  Unit Price (₹)
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="any"
+                                  value={it.unitPrice}
+                                  disabled={it.disabled}
+                                  onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  className="w-full px-2 py-1.5 text-right bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded text-xs text-gray-900 dark:text-slate-100 font-semibold disabled:opacity-50"
+                                />
+                              </div>
+
+                              {includeGst && (
+                                <div>
+                                  <label className="block text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                    GST %
+                                  </label>
+                                  <select
+                                    value={it.gstPercent || 0}
+                                    disabled={it.disabled}
+                                    onChange={(e) => handleItemChange(idx, 'gstPercent', parseFloat(e.target.value) || 0)}
+                                    className="w-full px-1.5 py-1.5 text-center bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded text-xs text-gray-900 dark:text-slate-100 disabled:opacity-50 font-medium"
+                                  >
+                                    <option value={0}>0%</option>
+                                    <option value={5}>5%</option>
+                                    <option value={12}>12%</option>
+                                    <option value={18}>18%</option>
+                                    <option value={28}>28%</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-1.5 border-t border-gray-100 dark:border-slate-700 text-xs">
+                              <span className="text-gray-500 dark:text-slate-400">Line Amount:</span>
+                              <span className="font-bold text-gray-900 dark:text-slate-100">
+                                {lineAmt > 0 ? `₹${lineAmt.toLocaleString('en-IN')}` : '₹0'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Financial Summary Box */}
                 {selectedItems.length > 0 && subtotal > 0 && (
-                  <div className="bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/30 rounded-xl p-4 space-y-1 text-right">
+                  <div className="bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/30 rounded-xl p-3.5 sm:p-4 space-y-1 text-right">
                     <div className="flex justify-between text-xs text-gray-600 dark:text-slate-400">
                       <span>Subtotal:</span>
                       <span className="font-semibold text-gray-900 dark:text-slate-100">₹{subtotal.toLocaleString('en-IN')}</span>
@@ -378,7 +493,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                         <span className="font-semibold text-gray-900 dark:text-slate-100">₹{gstTotal.toLocaleString('en-IN')}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm font-bold text-purple-950 dark:text-purple-200 pt-1.5 border-t border-purple-200/50 dark:border-purple-800/40">
+                    <div className="flex justify-between text-xs sm:text-sm font-bold text-purple-950 dark:text-purple-200 pt-1.5 border-t border-purple-200/50 dark:border-purple-800/40">
                       <span>Total PO Amount:</span>
                       <span>₹{grandTotal.toLocaleString('en-IN')}</span>
                     </div>
@@ -387,7 +502,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
 
                 {/* Vendor Notes */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 sm:mb-2">
                     Vendor Notes & Special Instructions
                   </label>
                   <textarea
@@ -395,7 +510,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add special packaging, quality check requirements, or instructions for the vendor..."
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm text-gray-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-xs sm:text-sm text-gray-900 dark:text-slate-100"
                   />
                 </div>
 
@@ -412,7 +527,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
               <PDFDownloadLink
                 document={<PurchaseOrderPDF po={savedPo} />}
                 fileName={`${savedPo.poNumber}.pdf`}
-                className="px-6 py-2.5 text-white rounded-lg font-medium shadow flex items-center gap-2 hover:opacity-90 transition-colors"
+                className="px-6 py-2.5 text-white rounded-lg font-medium shadow flex items-center gap-2 hover:opacity-90 transition-colors text-sm"
                 style={{ background: '#875a7b' }}
               >
                 {({ loading }) => loading ? 'Generating PDF...' : <><FileText size={18} /> Download Purchase Order PDF</>}
@@ -423,15 +538,15 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
 
         {/* Footer */}
         {!savedPo && !loadingVendors && (
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-gray-100 dark:border-slate-700 shrink-0 bg-gray-50/50 dark:bg-slate-800/80 rounded-b-2xl">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSave}
               disabled={saving || vendors.length === 0}
-              className="px-6 py-2 text-sm font-medium text-white rounded-lg flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-colors"
+              className="px-6 py-2 text-xs sm:text-sm font-medium text-white rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-colors"
               style={{ background: '#875a7b' }}
             >
               {saving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}

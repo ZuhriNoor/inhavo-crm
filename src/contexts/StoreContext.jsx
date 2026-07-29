@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { getStores } from '../services/storesService';
 
 const StoreContext = createContext(null);
+const STORAGE_KEY = 'inhavo_selected_store_id';
 
 export const StoreProvider = ({ children }) => {
   const { isAdmin, assignedStores } = useAuth();
@@ -11,6 +12,15 @@ export const StoreProvider = ({ children }) => {
   const [availableStores, setAvailableStores] = useState([]);
   const [activeStore, setActiveStore] = useState(null);
   const [loadingStores, setLoadingStores] = useState(true);
+
+  const handleSetActiveStore = (store) => {
+    setActiveStore(store);
+    if (store?.id) {
+      localStorage.setItem(STORAGE_KEY, store.id);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -25,12 +35,15 @@ export const StoreProvider = ({ children }) => {
 
         setAvailableStores(visible);
 
-        // Auto-select the first available store
+        // Auto-select saved store from localStorage, or fallback to first available
         if (visible.length > 0) {
-          setActiveStore((prev) => {
-            if (prev && visible.find((s) => s.id === prev.id)) return prev;
-            return visible[0];
-          });
+          const savedStoreId = localStorage.getItem(STORAGE_KEY);
+          const matched = savedStoreId ? visible.find((s) => s.id === savedStoreId) : null;
+          const target = matched || visible[0];
+          setActiveStore(target);
+          if (target?.id) {
+            localStorage.setItem(STORAGE_KEY, target.id);
+          }
         }
       } catch (err) {
         console.error('Failed to load stores:', err);
@@ -57,7 +70,7 @@ export const StoreProvider = ({ children }) => {
         allStores,
         availableStores,
         activeStore,
-        setActiveStore,
+        setActiveStore: handleSetActiveStore,
         loadingStores,
         refreshStores,
       }}
