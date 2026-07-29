@@ -18,6 +18,7 @@ import { WarrantyPDF } from '../utils/warrantyPdfTemplate';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
 import { getDocketTemplates } from '../services/docketsService';
 import { formatDate } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SalesOrderDetailPage() {
   const { orderId } = useParams();

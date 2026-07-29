@@ -17,6 +17,7 @@ import { DocketPDF } from '../utils/docketPdfTemplate';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import React from 'react';
 import { compressImage } from '../utils/imageCompression';
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 import { loadRemoteImageAsDataUrl, toProxiedUrl } from '../utils/imageUtils';
 
 const stampRotatedText = (page, {
@@ -373,15 +374,12 @@ export const createDocket = async (docketData) => {
   // First get the sequential docket number via transaction
   const docketNumData = await runTransaction(db, async (transaction) => {
     const counterRef = doc(db, 'counters', 'docketCounters');
-    const counterDoc = await transaction.get(counterRef);
-    
-    const soBase = docketData.salesOrderNumber || 'SO';
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[soBase]) {
-      nextCount = counterDoc.data()[soBase] + 1;
-    }
-    const docketNumber = `DOC-${soBase}-${String(nextCount).padStart(2, '0')}`;
-    transaction.set(counterRef, { [soBase]: nextCount }, { merge: true });
+    const { refNumber: docketNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      docketData.storeId,
+      'DOC-'
+    );
     return { docketNumber };
   });
 

@@ -13,6 +13,7 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       name: editStore?.name || '',
+      code: editStore?.code || '',
       description: editStore?.description || '',
       address: editStore?.address || '',
       bankDetails: editStore?.bankDetails || '',
@@ -22,10 +23,14 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
 
   const onSubmit = async (data) => {
     try {
+      const payload = {
+        ...data,
+        code: (data.code || data.name.slice(0, 4)).trim().toUpperCase().replace(/[^A-Z0-9]/g, ''),
+      };
       if (isEditing) {
-        await updateStore(editStore.id, data);
+        await updateStore(editStore.id, payload);
       } else {
-        await createStore(data);
+        await createStore(payload);
       }
       onSaved();
       onClose();
@@ -47,15 +52,28 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 overflow-hidden">
           <div className="px-4 sm:px-6 py-4 space-y-4 overflow-y-auto flex-1">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Store Name *</label>
-              <input
-                {...register('name', { required: 'Name is required' })}
-                className={inputCls}
-                placeholder="Mumbai Branch"
-              />
-              {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name.message}</p>}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Store Name *</label>
+                <input
+                  {...register('name', { required: 'Name is required' })}
+                  className={inputCls}
+                  placeholder="Mumbai Branch"
+                />
+                {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Store Code</label>
+                <input
+                  {...register('code')}
+                  className={inputCls + ' uppercase'}
+                  placeholder="MUM"
+                  maxLength={6}
+                />
+              </div>
             </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Description</label>
               <textarea

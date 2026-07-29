@@ -14,6 +14,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const QUOTATIONS_COL = 'quotations';
 
@@ -50,22 +51,12 @@ export const getQuotation = async (id) => {
 export const createQuotation = async (data) => {
   return await runTransaction(db, async (transaction) => {
     const counterRef = doc(db, 'counters', 'quotationCounters');
-    const counterDoc = await transaction.get(counterRef);
-
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yearKey = `Y${now.getFullYear()}`;
-
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[yearKey]) {
-      nextCount = counterDoc.data()[yearKey] + 1;
-    }
-
-    const quotationNumber = `QN/${mm}${yy}/${String(nextCount).padStart(4, '0')}`;
-
-    // Update counter
-    transaction.set(counterRef, { [yearKey]: nextCount }, { merge: true });
+    const { refNumber: quotationNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      data.storeId,
+      'QN'
+    );
 
     // Create quotation
     const newQuotationRef = doc(collection(db, QUOTATIONS_COL));

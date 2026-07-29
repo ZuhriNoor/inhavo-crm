@@ -11,6 +11,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const WARRANTIES_COL = 'warranties';
 
@@ -28,20 +29,12 @@ export const createWarranty = async (warrantyData) => {
   return await runTransaction(db, async (transaction) => {
     // Generate sequential warranty number
     const counterRef = doc(db, 'counters', 'warrantyCounters');
-    const counterDoc = await transaction.get(counterRef);
-    
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mmKey = `${yy}`;
-
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[mmKey]) {
-      nextCount = counterDoc.data()[mmKey] + 1;
-    }
-    const warrantyNumber = `WAR-${mmKey}-${String(nextCount).padStart(4, '0')}`;
-
-    // Update counter
-    transaction.set(counterRef, { [mmKey]: nextCount }, { merge: true });
+    const { refNumber: warrantyNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      warrantyData.storeId,
+      'WAR-'
+    );
 
     const newWarrantyRef = doc(collection(db, WARRANTIES_COL));
     const dataToSave = {

@@ -17,6 +17,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { compressImage } from '../utils/imageCompression';
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const SALES_ORDERS_COL = 'salesOrders';
 
@@ -158,21 +159,12 @@ export const createSaleOrderFromQuotation = async (quotation) => {
 
     // 2. Generate Sequential Sales Order Number
     const counterRef = doc(db, 'counters', 'salesOrderCounters');
-    const counterDoc = await transaction.get(counterRef);
-    
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yearKey = `Y${now.getFullYear()}`;
-
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[yearKey]) {
-      nextCount = counterDoc.data()[yearKey] + 1;
-    }
-    const salesOrderNumber = `SO/${mm}${yy}/${String(nextCount).padStart(4, '0')}`;
-
-    // Update counter
-    transaction.set(counterRef, { [yearKey]: nextCount }, { merge: true });
+    const { refNumber: salesOrderNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      quotation.storeId,
+      'SO'
+    );
 
     // 3. Create Sale Order Document
     const salesOrderRef = doc(collection(db, SALES_ORDERS_COL));

@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
+
 const PO_COL = 'purchaseOrders';
 
 export const getPurchaseOrdersBySalesOrder = async (salesOrderId) => {
@@ -61,20 +63,13 @@ export const getAllPurchaseOrders = async (storeId = null) => {
 
 export const createPurchaseOrder = async (poData) => {
   return await runTransaction(db, async (transaction) => {
-    // Generate sequential PO number (PO-YY-0001)
     const counterRef = doc(db, 'counters', 'poCounters');
-    const counterDoc = await transaction.get(counterRef);
-    
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[yy]) {
-      nextCount = counterDoc.data()[yy] + 1;
-    }
-    const poNumber = `PO-${yy}-${String(nextCount).padStart(4, '0')}`;
-
-    transaction.set(counterRef, { [yy]: nextCount }, { merge: true });
+    const { refNumber: poNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      poData.storeId,
+      'PO'
+    );
 
     const newPoRef = doc(collection(db, PO_COL));
     const dataToSave = {

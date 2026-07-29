@@ -16,6 +16,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const LEADS_COL = 'leads';
 
@@ -55,21 +56,12 @@ export const getLead = async (id) => {
 export const createLead = async (data) => {
   return await runTransaction(db, async (transaction) => {
     const counterRef = doc(db, 'counters', 'leadCounter');
-    const counterDoc = await transaction.get(counterRef);
-
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yearKey = `Y${now.getFullYear()}`;
-
-    let nextCount = 1;
-    if (counterDoc.exists() && counterDoc.data()[yearKey]) {
-      nextCount = counterDoc.data()[yearKey] + 1;
-    }
-
-    const leadNumber = `ENQ/${mm}${yy}/${String(nextCount).padStart(4, '0')}`;
-
-    transaction.set(counterRef, { [yearKey]: nextCount }, { merge: true });
+    const { refNumber: leadNumber } = await getStoreCodeAndNextSeq(
+      transaction,
+      counterRef,
+      data.storeId,
+      'ENQ'
+    );
 
     const newLeadRef = doc(collection(db, LEADS_COL));
     transaction.set(newLeadRef, {
