@@ -170,13 +170,13 @@ export default function AdminDataExportsPage() {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 overflow-y-auto h-full">
-      {/* Header & Filter */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Top Header Card & Store Filter */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-            <FileSpreadsheet className="text-emerald-600 dark:text-emerald-400" size={22} />
-            Data Export Center
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+            <Download className="text-purple-600 dark:text-purple-400" size={24} />
+            <span>Admin Data Export Center</span>
           </h2>
           <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
             Download complete system reports into Excel-compatible CSV files.
