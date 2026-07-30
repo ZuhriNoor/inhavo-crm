@@ -37,93 +37,63 @@ const stampRotatedText = (page, {
 }) => {
   const padX = 10;
   const padY = 5;
-  const boxW = textWidth + padX * 2;
-  const boxH = fontSize + padY * 2;
 
-  let x = 0;
-  let y = 0;
-  let rectX = 0;
-  let rectY = 0;
-  let rectW = boxW;
-  let rectH = boxH;
-  let angle = 0;
+  const W_vis = (rot === 90 || rot === 270) ? H : W;
+  const H_vis = (rot === 90 || rot === 270) ? W : H;
+
+  let xv = 0;
+  let yv = 0;
+
+  if (visualPos === 'bottom-right') {
+    xv = W_vis - textWidth - marginH;
+    yv = marginV;
+  } else if (visualPos === 'top-center') {
+    xv = (W_vis - textWidth) / 2;
+    yv = H_vis - marginV - fontSize;
+  } else if (visualPos === 'top-left') {
+    xv = marginH;
+    yv = H_vis - marginV - fontSize;
+  }
+
+  const rect_xv = xv - padX;
+  const rect_yv = yv - padY;
+  const rectW_vis = textWidth + padX * 2;
+  const rectH_vis = fontSize + padY * 2;
+
+  let x = 0, y = 0, rectX = 0, rectY = 0;
 
   if (rot === 0) {
-    angle = 0;
-    if (visualPos === 'bottom-right') {
-      x = W - textWidth - marginH;
-      y = marginV;
-    } else if (visualPos === 'top-center') {
-      x = (W - textWidth) / 2;
-      y = H - marginV - fontSize;
-    } else if (visualPos === 'top-left') {
-      x = marginH;
-      y = H - marginV - fontSize;
-    }
-    rectX = x - padX;
-    rectY = y - padY;
-    rectW = boxW;
-    rectH = boxH;
+    x = xv;
+    y = yv;
+    rectX = rect_xv;
+    rectY = rect_yv;
   } else if (rot === 90) {
-    angle = 90;
-    if (visualPos === 'bottom-right') {
-      x = marginV;
-      y = marginH + textWidth;
-    } else if (visualPos === 'top-center') {
-      x = W - marginV - fontSize;
-      y = (H - textWidth) / 2 + textWidth;
-    } else if (visualPos === 'top-left') {
-      x = W - marginV - fontSize;
-      y = H - marginH;
-    }
-    rectX = x - padY;
-    rectY = y - textWidth - padX;
-    rectW = boxH;
-    rectH = boxW;
+    x = W - yv;
+    y = xv;
+    rectX = W - rect_yv;
+    rectY = rect_xv;
   } else if (rot === 180) {
-    angle = 180;
-    if (visualPos === 'bottom-right') {
-      x = marginH + textWidth;
-      y = H - marginV;
-    } else if (visualPos === 'top-center') {
-      x = (W + textWidth) / 2;
-      y = marginV + fontSize;
-    } else if (visualPos === 'top-left') {
-      x = W - marginH;
-      y = marginV + fontSize;
-    }
-    rectX = x + padX;
-    rectY = y + padY;
-    rectW = boxW;
-    rectH = boxH;
+    x = W - xv;
+    y = H - yv;
+    rectX = W - rect_xv;
+    rectY = H - rect_yv;
   } else if (rot === 270) {
-    angle = 270;
-    if (visualPos === 'bottom-right') {
-      x = W - marginV;
-      y = H - marginH - textWidth;
-    } else if (visualPos === 'top-center') {
-      x = marginV + fontSize;
-      y = (H + textWidth) / 2 - textWidth;
-    } else if (visualPos === 'top-left') {
-      x = marginV + fontSize;
-      y = marginH;
-    }
-    rectX = x + padY;
-    rectY = y + padX;
-    rectW = boxH;
-    rectH = boxW;
+    x = yv;
+    y = H - xv;
+    rectX = rect_yv;
+    rectY = H - rect_xv;
   }
 
   if (bgColor) {
     page.drawRectangle({
       x: rectX,
       y: rectY,
-      width: rectW,
-      height: rectH,
+      width: rectW_vis,
+      height: rectH_vis,
       color: bgColor,
       borderColor: borderColor || undefined,
       borderWidth: borderColor ? 1 : 0,
-      rotate: degrees(angle),
+      rotate: degrees(rot),
     });
   }
 
@@ -133,7 +103,7 @@ const stampRotatedText = (page, {
     size: fontSize,
     font,
     color: textColor,
-    rotate: degrees(angle),
+    rotate: degrees(rot),
   });
 };
 
