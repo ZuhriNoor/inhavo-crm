@@ -11,6 +11,10 @@ export default function PWAUpdatePrompt() {
     onRegistered(r) {
       if (r) {
         console.log('Service Worker registered successfully');
+        // Periodically check for updates every hour
+        setInterval(() => {
+          r.update();
+        }, 60 * 60 * 1000);
       }
     },
     onRegisterError(error) {
