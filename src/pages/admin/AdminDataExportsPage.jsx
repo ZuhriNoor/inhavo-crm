@@ -12,7 +12,6 @@ import {
   exportDocketsToExcel,
   exportLeadsToExcel,
 } from '../../utils/exportUtils';
-import { runVisibleToMigration } from '../../utils/migration';
 import LoadingScreen from '../../components/shared/LoadingScreen';
 
 export default function AdminDataExportsPage() {
@@ -28,9 +27,6 @@ export default function AdminDataExportsPage() {
     dockets: 0,
     leads: 0,
   });
-  
-  const [migrating, setMigrating] = useState(false);
-  const [migrationStatus, setMigrationStatus] = useState('');
 
   useEffect(() => {
     fetchCounts();
@@ -112,20 +108,6 @@ export default function AdminDataExportsPage() {
       alert(`Failed to export ${moduleType} data.`);
     } finally {
       setExportingModule(null);
-    }
-  };
-
-  const handleMigration = async () => {
-    if (!confirm('Are you sure you want to run the visibleTo array backfill migration? This should only be run once.')) return;
-    setMigrating(true);
-    setMigrationStatus('Starting migration...');
-    try {
-      await runVisibleToMigration(setMigrationStatus);
-    } catch (err) {
-      console.error(err);
-      setMigrationStatus('Migration failed!');
-    } finally {
-      setTimeout(() => setMigrating(false), 3000);
     }
   };
 
@@ -226,23 +208,6 @@ export default function AdminDataExportsPage() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-      </div>
-
-      {/* Migration Actions */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 className="text-base font-bold text-gray-900 dark:text-slate-100">Database Maintenance</h3>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-            Run data migrations for system updates. {migrationStatus && <span className="text-purple-600 font-semibold">{migrationStatus}</span>}
-          </p>
-        </div>
-        <button
-          onClick={handleMigration}
-          disabled={migrating}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-        >
-          {migrating ? 'Migrating...' : 'Run visibleTo Migration'}
-        </button>
       </div>
 
       {/* Export Cards Grid */}
