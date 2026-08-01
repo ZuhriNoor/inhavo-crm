@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, ExternalLink, RefreshCw, Edit2, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
+import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/helpers';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
@@ -9,6 +10,7 @@ import QuotationDetailModal from '../components/quotations/QuotationDetailModal'
 
 const QuotationsPage = () => {
   const { activeStore } = useStore();
+  const { profile } = useAuth();
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -34,7 +36,7 @@ const QuotationsPage = () => {
 
     try {
       const { getQuotations } = await import('../services/quotationsService');
-      const response = await getQuotations(activeStore.id, cursor, PAGE_SIZE);
+      const response = await getQuotations(activeStore.id, cursor, PAGE_SIZE, profile);
       
       setQuotations(response.data);
       setHasMore(response.hasMore);

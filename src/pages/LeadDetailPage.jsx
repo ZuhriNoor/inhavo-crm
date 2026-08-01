@@ -43,7 +43,7 @@ const STATUS_COLORS = {
 const LeadDetailPage = () => {
   const { leadId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const { activeStore } = useStore();
 
   const [lead, setLead] = useState(null);
@@ -94,8 +94,8 @@ const LeadDetailPage = () => {
       }
 
       const [tasksData, quotsData, stagesData, usersData] = await Promise.all([
-        getTasksByLead(leadId, leadData.storeId),
-        getQuotationsByLead(leadId, leadData.storeId),
+        getTasksByLead(leadId, leadData.storeId, profile),
+        getQuotationsByLead(leadId, leadData.storeId, profile),
         getStages(),
         getUsers(),
       ]);

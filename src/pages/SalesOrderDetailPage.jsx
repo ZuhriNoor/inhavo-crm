@@ -23,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function SalesOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const [order, setOrder] = useState(null);
   const [dockets, setDockets] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -59,7 +59,7 @@ export default function SalesOrderDetailPage() {
         const [docketsData, warrantiesData, posData, dTpls] = await Promise.all([
           getDocketsBySaleOrder(orderId),
           getWarrantiesBySaleOrder(orderId),
-          getPurchaseOrdersBySalesOrder(orderId),
+          getPurchaseOrdersBySalesOrder(orderId, profile),
           getDocketTemplates()
         ]);
         setDockets(docketsData);
@@ -137,14 +137,16 @@ export default function SalesOrderDetailPage() {
             >
               <Edit2 size={16} /> Edit Order
             </button>
-            <button
-              type="button"
-              onClick={() => setPoModalOpen(true)}
-              className="px-3.5 py-2 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors hover:opacity-90 flex items-center gap-1.5 shadow-sm"
-              style={{ background: '#875a7b' }}
-            >
-              <Truck size={16} /> Create Purchase Order
-            </button>
+            {(isAdmin || profile?.canViewPurchaseOrders) && (
+              <button
+                type="button"
+                onClick={() => setPoModalOpen(true)}
+                className="px-3.5 py-2 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors hover:opacity-90 flex items-center gap-1.5 shadow-sm"
+                style={{ background: '#875a7b' }}
+              >
+                <Truck size={16} /> Create Purchase Order
+              </button>
+            )}
             <select
                 value={order.status || 'Confirmed'}
                 onChange={handleStatusChange}
@@ -175,12 +177,14 @@ export default function SalesOrderDetailPage() {
           >
             Warranties <span className="bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-xs">{warranties.length}</span>
           </button>
-          <button
-            onClick={() => setActiveTab('purchaseOrders')}
-            className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'purchaseOrders' ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
-          >
-            Purchase Orders <span className="bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-xs">{purchaseOrders.length}</span>
-          </button>
+          {(isAdmin || profile?.canViewPurchaseOrders) && (
+            <button
+              onClick={() => setActiveTab('purchaseOrders')}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'purchaseOrders' ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+            >
+              Purchase Orders <span className="bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-xs">{purchaseOrders.length}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -294,7 +298,7 @@ export default function SalesOrderDetailPage() {
                                     )}
                                   </div>
                                   
-                                  {assignedPo && (
+                                  {(isAdmin || profile?.canViewPurchaseOrders) && assignedPo && (
                                     <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                                       PO: {assignedPo.poNumber} ({assignedPo.vendor?.name})
                                     </span>

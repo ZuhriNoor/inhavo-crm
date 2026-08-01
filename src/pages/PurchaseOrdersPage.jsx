@@ -3,9 +3,11 @@ import { Truck, Search, FileText, RefreshCw, Calendar, Building2, Trash2 } from 
 import { getAllPurchaseOrders, updatePurchaseOrderStatus, deletePurchaseOrder } from '../services/purchaseOrdersService';
 import { useStore } from '../contexts/StoreContext';
 import { PDFDownloadLink } from '@react-pdf/renderer';
+import { Navigate } from 'react-router-dom';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
 import PurchaseOrderEditModal from '../components/purchaseOrders/PurchaseOrderEditModal';
 import { formatDate } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
 
 const STATUS_COLORS = {
   Issued: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -21,6 +23,7 @@ export default function PurchaseOrdersPage() {
   const [selectedPo, setSelectedPo] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const { activeStore } = useStore();
+  const { isAdmin, profile } = useAuth();
 
   useEffect(() => {
     fetchOrders();
@@ -29,7 +32,7 @@ export default function PurchaseOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const data = await getAllPurchaseOrders(activeStore?.id);
+      const data = await getAllPurchaseOrders(activeStore?.id, profile);
       setPurchaseOrders(data);
     } catch (err) {
       console.error('Error loading purchase orders:', err);
@@ -69,6 +72,10 @@ export default function PurchaseOrdersPage() {
       po.vendor?.name?.toLowerCase().includes(query)
     );
   });
+
+  if (!isAdmin && !profile?.canViewPurchaseOrders) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

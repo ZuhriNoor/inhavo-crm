@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getSalesOrders } from '../services/salesOrdersService';
 import { formatDate } from '../utils/helpers';
 import EmptyState from '../components/shared/EmptyState';
@@ -9,6 +10,7 @@ import LoadingScreen from '../components/shared/LoadingScreen';
 
 export default function SalesOrdersPage() {
   const { activeStore } = useStore();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   
   const [orders, setOrders] = useState([]);
@@ -31,7 +33,7 @@ export default function SalesOrdersPage() {
   const fetchOrders = async (cursor) => {
     setLoading(true);
     try {
-      const response = await getSalesOrders(activeStore?.id, cursor, PAGE_SIZE);
+      const response = await getSalesOrders(activeStore?.id, cursor, PAGE_SIZE, profile);
       setOrders(response.data);
       setHasMore(response.hasMore);
       

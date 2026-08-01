@@ -120,9 +120,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Primary Links */}
         <nav className="flex-1 overflow-y-auto py-2 space-y-0.5">
         <div className="space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <NavItem key={item.to} {...item} onClick={onClose} />
-          ))}
+          {NAV_ITEMS.map((item) => {
+            // Hide Purchase Orders if not admin and lacks permission
+            if (item.to === '/purchase-orders' && !isAdmin && !profile?.canViewPurchaseOrders) {
+              return null;
+            }
+            return <NavItem key={item.to} {...item} onClick={onClose} />;
+          })}
         </div>
 
         {/* Admin Links */}

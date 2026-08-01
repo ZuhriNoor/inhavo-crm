@@ -14,6 +14,8 @@ import {
   startAfter,
   serverTimestamp,
   runTransaction,
+  or,
+  and,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
@@ -21,14 +23,19 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 const LEADS_COL = 'leads';
 
 /** Fetch leads for given store IDs with pagination */
-export const getLeads = async (storeIds, includeDeleted = false, lastVisibleDoc = null, pageSize = 30) => {
+export const getLeads = async (storeIds, includeDeleted = false, lastVisibleDoc = null, pageSize = 30, profile = null) => {
   if (!storeIds || storeIds.length === 0) return { data: [], lastDoc: null, hasMore: false };
   
   const constraints = [
-    where('storeId', 'in', storeIds),
-    orderBy('createdAt', 'desc'),
-    limit(pageSize)
+    where('storeId', 'in', storeIds)
   ];
+
+  if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+    constraints.push(where('visibleTo', 'array-contains', profile.uid));
+  }
+
+  constraints.push(orderBy('createdAt', 'desc'));
+  constraints.push(limit(pageSize));
 
   if (lastVisibleDoc) {
     constraints.push(startAfter(lastVisibleDoc));
@@ -64,8 +71,16 @@ export const createLead = async (data) => {
     );
 
     const newLeadRef = doc(collection(db, LEADS_COL));
+    
+    const auth = (await import('firebase/auth')).getAuth();
+    const uid = auth.currentUser?.uid;
+    const creator = data.createdBy || uid;
+    const visibleTo = [...new Set([creator, data.assignedUserId].filter(Boolean))];
+
     transaction.set(newLeadRef, {
       ...data,
+      createdBy: creator,
+      visibleTo,
       leadNumber,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -77,10 +92,18 @@ export const createLead = async (data) => {
 
 /** Update a lead */
 export const updateLead = async (id, data) => {
-  await updateDoc(doc(db, LEADS_COL, id), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+  let updateData = { ...data, updatedAt: serverTimestamp() };
+  
+  // If assignment changes, update visibleTo
+  if (data.assignedUserId !== undefined) {
+    const snap = await getDoc(doc(db, LEADS_COL, id));
+    if (snap.exists()) {
+      const existing = snap.data();
+      updateData.visibleTo = [...new Set([existing.createdBy, data.assignedUserId].filter(Boolean))];
+    }
+  }
+
+  await updateDoc(doc(db, LEADS_COL, id), updateData);
 };
 
 /** Move lead to a different stage */

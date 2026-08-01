@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, RefreshCw, Search, Archive, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getLeads } from '../services/leadsService';
 import { getStages } from '../services/stagesService';
 import { formatDate } from '../utils/helpers';
@@ -10,6 +11,7 @@ import LeadModal from '../components/leads/LeadModal';
 
 const LeadsPage = () => {
   const { activeStore } = useStore();
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   const [leads, setLeads] = useState([]);
@@ -39,7 +41,7 @@ const LeadsPage = () => {
     
     try {
       const [leadsResponse, stagesData] = await Promise.all([
-        getLeads([activeStore.id], true, cursor, PAGE_SIZE),
+        getLeads([activeStore.id], true, cursor, PAGE_SIZE, profile),
         getStages([activeStore.id]),
       ]);
       

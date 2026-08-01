@@ -49,6 +49,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
       phone: editUser?.phone || '',
       location: editUser?.location || '',
       assignedStores: editUser?.assignedStores || [],
+      canViewPurchaseOrders: editUser?.canViewPurchaseOrders || false,
+      dataAccessLevel: editUser?.dataAccessLevel || 'all',
     },
   });
 
@@ -65,6 +67,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           phone: data.phone || '',
           location: data.location || '',
           assignedStores,
+          canViewPurchaseOrders: data.canViewPurchaseOrders,
+          dataAccessLevel: data.dataAccessLevel,
         });
         if (authUser && (editUser.uid || editUser.id) === authUser.uid) {
           await refreshProfile();
@@ -81,6 +85,8 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           phone: data.phone || '',
           location: data.location || '',
           assignedStores,
+          canViewPurchaseOrders: data.canViewPurchaseOrders,
+          dataAccessLevel: data.dataAccessLevel,
           createdAt: serverTimestamp(),
         });
       }
@@ -169,6 +175,25 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Data Access Level</label>
+            <select {...register('dataAccessLevel')} className={inputCls}>
+              <option value="all">All Store Data</option>
+              <option value="own">Own Data Only</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/60 px-1 rounded py-1 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700/40">
+              <input
+                type="checkbox"
+                {...register('canViewPurchaseOrders')}
+                className="accent-purple-600 w-4 h-4"
+              />
+              <span className="text-gray-700 dark:text-slate-200">Can View Purchase Orders</span>
+            </label>
           </div>
 
           <div>

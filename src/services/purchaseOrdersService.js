@@ -16,12 +16,13 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const PO_COL = 'purchaseOrders';
 
-export const getPurchaseOrdersBySalesOrder = async (salesOrderId) => {
+export const getPurchaseOrdersBySalesOrder = async (salesOrderId, profile = null) => {
   try {
-    const q = query(
-      collection(db, PO_COL),
-      where('salesOrderId', '==', salesOrderId)
-    );
+    const constraints = [where('salesOrderId', '==', salesOrderId)];
+    if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+      constraints.push(where('visibleTo', 'array-contains', profile.uid));
+    }
+    const q = query(collection(db, PO_COL), ...constraints);
     const snap = await getDocs(q);
     const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     return docs.sort((a, b) => {
@@ -35,19 +36,16 @@ export const getPurchaseOrdersBySalesOrder = async (salesOrderId) => {
   }
 };
 
-export const getAllPurchaseOrders = async (storeId = null) => {
+export const getAllPurchaseOrders = async (storeId = null, profile = null) => {
   try {
-    let q;
-    if (storeId) {
-      q = query(
-        collection(db, PO_COL),
-        where('storeId', '==', storeId)
-      );
-    } else {
-      q = query(
-        collection(db, PO_COL)
-      );
+    const constraints = [];
+    if (storeId) constraints.push(where('storeId', '==', storeId));
+    
+    if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+      constraints.push(where('visibleTo', 'array-contains', profile.uid));
     }
+    
+    const q = query(collection(db, PO_COL), ...constraints);
     const snap = await getDocs(q);
     const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     return docs.sort((a, b) => {
@@ -71,11 +69,27 @@ export const createPurchaseOrder = async (poData) => {
       'PO'
     );
 
+    const auth = (await import('firebase/auth')).getAuth();
+    const uid = auth.currentUser?.uid;
+    const creator = poData.createdBy || uid || null;
+
+    let soVisibleTo = [];
+    if (poData.salesOrderId) {
+      const soSnap = await transaction.get(doc(db, 'salesOrders', poData.salesOrderId));
+      if (soSnap.exists()) {
+        soVisibleTo = soSnap.data().visibleTo || [];
+      }
+    }
+
+    const visibleTo = [...new Set([...soVisibleTo, creator].filter(Boolean))];
+
     const newPoRef = doc(collection(db, PO_COL));
     const dataToSave = {
       ...poData,
       poNumber,
       status: poData.status || 'Issued',
+      createdBy: creator,
+      visibleTo,
       createdAt: serverTimestamp()
     };
 

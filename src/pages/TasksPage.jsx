@@ -18,7 +18,7 @@ const FILTER_OPTIONS = ['all', 'pending', 'in-progress', 'completed'];
 
 const TasksPage = () => {
   const { activeStore } = useStore();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, profile } = useAuth();
 
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
@@ -47,7 +47,7 @@ const TasksPage = () => {
 
     try {
       const [tasksResponse, usersData] = await Promise.all([
-        getTasks([activeStore.id], cursor, PAGE_SIZE),
+        getTasks([activeStore.id], cursor, PAGE_SIZE, profile),
         getUsers(),
       ]);
       

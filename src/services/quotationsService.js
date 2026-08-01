@@ -19,8 +19,15 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 const QUOTATIONS_COL = 'quotations';
 
 /** Fetch all quotations for a store */
-export const getQuotations = async (storeId, lastVisibleDoc = null, pageSize = 30) => {
-  const constraints = [where('storeId', '==', storeId), orderBy('createdAt', 'desc'), limit(pageSize)];
+export const getQuotations = async (storeId, lastVisibleDoc = null, pageSize = 30, profile = null) => {
+  const constraints = [where('storeId', '==', storeId)];
+  
+  if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+    constraints.push(where('visibleTo', 'array-contains', profile.uid));
+  }
+  
+  constraints.push(orderBy('createdAt', 'desc'));
+  constraints.push(limit(pageSize));
   if (lastVisibleDoc) constraints.push(startAfter(lastVisibleDoc));
   
   const q = query(collection(db, QUOTATIONS_COL), ...constraints);
@@ -31,9 +38,14 @@ export const getQuotations = async (storeId, lastVisibleDoc = null, pageSize = 3
 };
 
 /** Fetch all quotations for a lead */
-export const getQuotationsByLead = async (leadId, storeId = null) => {
+export const getQuotationsByLead = async (leadId, storeId = null, profile = null) => {
   const constraints = [where('leadId', '==', leadId)];
   if (storeId) constraints.push(where('storeId', '==', storeId));
+
+  if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+    constraints.push(where('visibleTo', 'array-contains', profile.uid));
+  }
+
   constraints.push(orderBy('createdAt', 'desc'));
   
   const q = query(collection(db, QUOTATIONS_COL), ...constraints);
@@ -60,8 +72,27 @@ export const createQuotation = async (data) => {
 
     // Create quotation
     const newQuotationRef = doc(collection(db, QUOTATIONS_COL));
+    
+    // Import getAuth dynamically or just check if data has createdBy
+    // If not, we should probably let the component pass it, or we can use Firebase Auth directly
+    const auth = (await import('firebase/auth')).getAuth();
+    const uid = auth.currentUser?.uid;
+    const creator = data.createdBy || uid || null;
+
+    let leadVisibleTo = [];
+    if (data.leadId) {
+      const leadSnap = await transaction.get(doc(db, 'leads', data.leadId));
+      if (leadSnap.exists()) {
+        leadVisibleTo = leadSnap.data().visibleTo || [];
+      }
+    }
+
+    const visibleTo = [...new Set([...leadVisibleTo, creator].filter(Boolean))];
+
     transaction.set(newQuotationRef, {
       ...data,
+      createdBy: creator,
+      visibleTo,
       quotationNumber,
       createdAt: serverTimestamp(),
     });

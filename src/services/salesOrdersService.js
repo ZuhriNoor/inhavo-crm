@@ -22,9 +22,13 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 const SALES_ORDERS_COL = 'salesOrders';
 
 /** Fetch sales orders with pagination */
-export const getSalesOrders = async (storeId = null, lastVisibleDoc = null, pageSize = 30) => {
+export const getSalesOrders = async (storeId = null, lastVisibleDoc = null, pageSize = 30, profile = null) => {
   const constraints = [];
   if (storeId) constraints.push(where('storeId', '==', storeId));
+
+  if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
+    constraints.push(where('visibleTo', 'array-contains', profile.uid));
+  }
   
   constraints.push(orderBy('createdAt', 'desc'));
   constraints.push(limit(pageSize));
@@ -166,6 +170,11 @@ export const createSaleOrderFromQuotation = async (quotation) => {
       'SO'
     );
 
+    const auth = (await import('firebase/auth')).getAuth();
+    const uid = auth.currentUser?.uid;
+    const creator = quotation.createdBy || uid || null;
+    const visibleTo = [...new Set([...(quotationDoc.data().visibleTo || []), creator].filter(Boolean))];
+
     // 3. Create Sale Order Document
     const salesOrderRef = doc(collection(db, SALES_ORDERS_COL));
     const salesOrderData = {
@@ -182,6 +191,8 @@ export const createSaleOrderFromQuotation = async (quotation) => {
       grandTotal: quotation.grandTotal || quotation.totalAmount || 0,
       totalAmount: quotation.grandTotal || quotation.totalAmount || 0,
       status: 'Confirmed',
+      createdBy: creator,
+      visibleTo,
       createdAt: serverTimestamp(),
     };
     transaction.set(salesOrderRef, salesOrderData);
