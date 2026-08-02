@@ -158,16 +158,6 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
           </div>
 
           <div className="flex items-center gap-3">
-            {!isEditing && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="px-3.5 py-1.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-100 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
-              >
-                <Edit2 size={14} /> Edit PO
-              </button>
-            )}
-
             <PDFDownloadLink
               document={<PurchaseOrderPDF po={updatedPoDataForPdf} />}
               fileName={`${po.poNumber}.pdf`}
@@ -238,8 +228,8 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-3">
                   Products Included ({items.length})
                 </h3>
-                <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-sm">
+                <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[800px]">
                     <thead className="bg-gray-50 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400">
                       <tr>
                         <th className="px-4 py-3 font-medium w-12 text-center">#</th>
@@ -372,8 +362,8 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
                   </label>
                 </div>
 
-                <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-sm">
+                <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[800px]">
                     <thead className="bg-gray-50 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400">
                       <tr>
                         <th className="px-4 py-3 font-medium w-1/4">Product Name</th>

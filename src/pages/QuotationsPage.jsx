@@ -152,17 +152,19 @@ const QuotationsPage = () => {
           
 
 
-          <button
-            onClick={() => {
-              setEditingQuote(null);
-              setShowModal(true);
-            }}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg transition-all"
-            style={{ background: '#875a7b' }}
-          >
-            <Plus size={15} />
-            New Quotation
-          </button>
+          {profile?.role === 'admin' && (
+            <button
+              onClick={() => {
+                setEditingQuote(null);
+                setShowModal(true);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg transition-all"
+              style={{ background: '#875a7b' }}
+            >
+              <Plus size={15} />
+              New Quotation
+            </button>
+          )}
         </div>
       </div>
 

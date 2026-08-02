@@ -73,7 +73,7 @@ export default function PurchaseOrdersPage() {
     );
   });
 
-  if (!isAdmin && !profile?.canViewPurchaseOrders) {
+  if (!isAdmin && profile?.canViewPurchaseOrders !== true) {
     return <Navigate to="/" replace />;
   }
 

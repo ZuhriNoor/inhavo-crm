@@ -16,9 +16,10 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const PO_COL = 'purchaseOrders';
 
-export const getPurchaseOrdersBySalesOrder = async (salesOrderId, profile = null) => {
+export const getPurchaseOrdersBySalesOrder = async (salesOrderId, storeId = null, profile = null) => {
   try {
     const constraints = [where('salesOrderId', '==', salesOrderId)];
+    if (storeId) constraints.push(where('storeId', '==', storeId));
     if (profile?.role !== 'admin' && profile?.dataAccessLevel === 'own' && profile?.uid) {
       constraints.push(where('visibleTo', 'array-contains', profile.uid));
     }
