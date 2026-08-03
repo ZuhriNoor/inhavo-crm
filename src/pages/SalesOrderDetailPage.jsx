@@ -24,6 +24,7 @@ export default function SalesOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { isAdmin, profile } = useAuth();
+  const canViewPO = isAdmin || profile?.canViewPurchaseOrders === true || profile?.canViewPurchaseOrders === 'true';
   const [order, setOrder] = useState(null);
   const [dockets, setDockets] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -59,7 +60,7 @@ export default function SalesOrderDetailPage() {
         const [docketsData, warrantiesData, posData, dTpls] = await Promise.all([
           getDocketsBySaleOrder(orderId),
           getWarrantiesBySaleOrder(orderId),
-          (isAdmin || profile?.canViewPurchaseOrders === true) 
+          canViewPO
             ? getPurchaseOrdersBySalesOrder(orderId, orderData.storeId, profile) 
             : Promise.resolve([]),
           getDocketTemplates()
@@ -139,7 +140,7 @@ export default function SalesOrderDetailPage() {
             >
               <Edit2 size={16} /> Edit Order
             </button>
-            {(isAdmin || profile?.canViewPurchaseOrders === true) && (
+            {canViewPO && (
               <button
                 type="button"
                 onClick={() => setPoModalOpen(true)}
@@ -179,7 +180,7 @@ export default function SalesOrderDetailPage() {
           >
             Warranties <span className="bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-xs">{warranties.length}</span>
           </button>
-          {(isAdmin || profile?.canViewPurchaseOrders === true) && (
+          {canViewPO && (
             <button
               onClick={() => setActiveTab('purchaseOrders')}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'purchaseOrders' ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
@@ -300,7 +301,7 @@ export default function SalesOrderDetailPage() {
                                     )}
                                   </div>
                                   
-                                  {(isAdmin || profile?.canViewPurchaseOrders === true) && assignedPo && (
+                                  {canViewPO && assignedPo && (
                                     <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                                       PO: {assignedPo.poNumber} ({assignedPo.vendor?.name})
                                     </span>

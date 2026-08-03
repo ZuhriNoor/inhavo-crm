@@ -122,7 +122,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="space-y-1">
           {NAV_ITEMS.map((item) => {
             // Hide Purchase Orders if not admin and lacks permission
-            if (item.to === '/purchase-orders' && !isAdmin && profile?.canViewPurchaseOrders !== true) {
+            if (item.to === '/purchase-orders' && !isAdmin && profile?.canViewPurchaseOrders !== true && profile?.canViewPurchaseOrders !== 'true') {
               return null;
             }
             return <NavItem key={item.to} {...item} onClick={onClose} />;
