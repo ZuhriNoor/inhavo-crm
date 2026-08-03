@@ -62,6 +62,14 @@ export const getQuotation = async (id) => {
 /** Create a quotation record with sequential ID */
 export const createQuotation = async (data) => {
   return await runTransaction(db, async (transaction) => {
+    let leadVisibleTo = [];
+    if (data.leadId) {
+      const leadSnap = await transaction.get(doc(db, 'leads', data.leadId));
+      if (leadSnap.exists()) {
+        leadVisibleTo = leadSnap.data().visibleTo || [];
+      }
+    }
+
     const counterRef = doc(db, 'counters', 'quotationCounters');
     const { refNumber: quotationNumber } = await getStoreCodeAndNextSeq(
       transaction,
@@ -78,14 +86,6 @@ export const createQuotation = async (data) => {
     const auth = (await import('firebase/auth')).getAuth();
     const uid = auth.currentUser?.uid;
     const creator = data.createdBy || uid || null;
-
-    let leadVisibleTo = [];
-    if (data.leadId) {
-      const leadSnap = await transaction.get(doc(db, 'leads', data.leadId));
-      if (leadSnap.exists()) {
-        leadVisibleTo = leadSnap.data().visibleTo || [];
-      }
-    }
 
     const visibleTo = [...new Set([...leadVisibleTo, creator].filter(Boolean))];
 

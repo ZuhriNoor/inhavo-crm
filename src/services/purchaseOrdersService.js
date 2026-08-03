@@ -62,6 +62,14 @@ export const getAllPurchaseOrders = async (storeId = null, profile = null) => {
 
 export const createPurchaseOrder = async (poData) => {
   return await runTransaction(db, async (transaction) => {
+    let soVisibleTo = [];
+    if (poData.salesOrderId) {
+      const soSnap = await transaction.get(doc(db, 'salesOrders', poData.salesOrderId));
+      if (soSnap.exists()) {
+        soVisibleTo = soSnap.data().visibleTo || [];
+      }
+    }
+
     const counterRef = doc(db, 'counters', 'poCounters');
     const { refNumber: poNumber } = await getStoreCodeAndNextSeq(
       transaction,
@@ -73,14 +81,6 @@ export const createPurchaseOrder = async (poData) => {
     const auth = (await import('firebase/auth')).getAuth();
     const uid = auth.currentUser?.uid;
     const creator = poData.createdBy || uid || null;
-
-    let soVisibleTo = [];
-    if (poData.salesOrderId) {
-      const soSnap = await transaction.get(doc(db, 'salesOrders', poData.salesOrderId));
-      if (soSnap.exists()) {
-        soVisibleTo = soSnap.data().visibleTo || [];
-      }
-    }
 
     const visibleTo = [...new Set([...soVisibleTo, creator].filter(Boolean))];
 
