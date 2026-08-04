@@ -33,6 +33,9 @@ export const getPurchaseOrdersBySalesOrder = async (salesOrderId, storeId = null
     });
   } catch (error) {
     console.error('Error fetching purchase orders for sales order:', error);
+    if (error?.message?.includes('index')) {
+      alert('Firebase requires a new index to fetch Purchase Orders. Please open your browser console (F12) and click the link in the red error message to create it.');
+    }
     return [];
   }
 };

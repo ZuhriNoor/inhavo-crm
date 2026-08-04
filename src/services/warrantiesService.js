@@ -15,14 +15,25 @@ import { getStoreCodeAndNextSeq } from '../utils/sequenceUtils';
 
 const WARRANTIES_COL = 'warranties';
 
-export const getWarrantiesBySaleOrder = async (salesOrderId) => {
-  const q = query(
-    collection(db, WARRANTIES_COL),
-    where('salesOrderId', '==', salesOrderId),
-    orderBy('createdAt', 'desc')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export const getWarrantiesBySaleOrder = async (salesOrderId, storeId = null) => {
+  try {
+    const constraints = [where('salesOrderId', '==', salesOrderId)];
+    if (storeId) constraints.push(where('storeId', '==', storeId));
+    
+    const q = query(
+      collection(db, WARRANTIES_COL),
+      ...constraints,
+      orderBy('createdAt', 'desc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('Error fetching warranties for sales order:', error);
+    if (error?.message?.includes('index')) {
+      alert('Firebase requires a new index to fetch Warranties. Please click the link in the console to create it.');
+    }
+    return [];
+  }
 };
 
 export const createWarranty = async (warrantyData) => {

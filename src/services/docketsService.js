@@ -169,14 +169,25 @@ const applyContinuousPageNumbers = async (pdfDoc, attachmentTitlesMap = new Map(
 const DOCKETS_COL = 'dockets';
 const TEMPLATES_COL = 'docketTemplates';
 
-export const getDocketsBySaleOrder = async (salesOrderId) => {
-  const q = query(
-    collection(db, DOCKETS_COL),
-    where('salesOrderId', '==', salesOrderId),
-    orderBy('createdAt', 'asc')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export const getDocketsBySaleOrder = async (salesOrderId, storeId = null) => {
+  try {
+    const constraints = [where('salesOrderId', '==', salesOrderId)];
+    if (storeId) constraints.push(where('storeId', '==', storeId));
+    
+    const q = query(
+      collection(db, DOCKETS_COL),
+      ...constraints,
+      orderBy('createdAt', 'asc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('Error fetching dockets for sales order:', error);
+    if (error?.message?.includes('index')) {
+      alert('Firebase requires a new index to fetch Dockets. Please click the link in the console to create it.');
+    }
+    return [];
+  }
 };
 
 // Helper for file uploads
