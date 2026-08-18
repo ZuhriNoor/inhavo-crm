@@ -112,6 +112,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
     return {
       salesOrderId: saleOrder.id,
       salesOrderNumber: saleOrder.salesOrderNumber,
+      storeId: saleOrder.storeId || null,
       customerDetails: saleOrder.customerDetails,
       productDetails,
       templateId: selectedTemplate?.id || '',

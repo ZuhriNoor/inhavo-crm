@@ -169,14 +169,11 @@ const applyContinuousPageNumbers = async (pdfDoc, attachmentTitlesMap = new Map(
 const DOCKETS_COL = 'dockets';
 const TEMPLATES_COL = 'docketTemplates';
 
-export const getDocketsBySaleOrder = async (salesOrderId, storeId = null) => {
+export const getDocketsBySaleOrder = async (salesOrderId) => {
   try {
-    const constraints = [where('salesOrderId', '==', salesOrderId)];
-    if (storeId) constraints.push(where('storeId', '==', storeId));
-    
     const q = query(
       collection(db, DOCKETS_COL),
-      ...constraints,
+      where('salesOrderId', '==', salesOrderId),
       orderBy('createdAt', 'asc')
     );
     const snap = await getDocs(q);
@@ -295,9 +292,9 @@ const processDocketImages = async (docketData, docketNumber, timestamp) => {
   }
 
   // Preserve existing remote extraImageUrls if editing
-  if (docketData.extraImageUrls) {
-    for (const url of docketData.extraImageUrls) {
-      if (url && !url.startsWith('blob:')) {
+  if (docketData.existingExtraImageUrls) {
+    for (const url of docketData.existingExtraImageUrls) {
+      if (url && !url.startsWith('blob:') && !url.startsWith('data:') && !extraImageUrls.includes(url)) {
         extraImageUrls.push(url);
       }
     }
@@ -378,6 +375,7 @@ export const createDocket = async (docketData) => {
   const finalDocket = {
     salesOrderId: docketData.salesOrderId,
     salesOrderNumber: docketData.salesOrderNumber,
+    storeId: docketData.storeId || null,
     customerDetails: docketData.customerDetails,
     productDetails: docketData.productDetails,
     templateId: docketData.templateId,
@@ -488,6 +486,7 @@ export const updateDocketWithFiles = async (id, docketData) => {
   const finalDocket = {
     salesOrderId: docketData.salesOrderId,
     salesOrderNumber: docketData.salesOrderNumber,
+    storeId: docketData.storeId || null,
     customerDetails: docketData.customerDetails,
     productDetails: docketData.productDetails,
     templateId: docketData.templateId,

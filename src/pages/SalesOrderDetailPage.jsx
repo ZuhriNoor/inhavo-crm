@@ -58,7 +58,7 @@ export default function SalesOrderDetailPage() {
       if (orderData) {
         setOrder(orderData);
         const [docketsData, warrantiesData, posData, dTpls] = await Promise.all([
-          getDocketsBySaleOrder(orderId, orderData.storeId),
+          getDocketsBySaleOrder(orderId),
           getWarrantiesBySaleOrder(orderId, orderData.storeId),
           canViewPO
             ? getPurchaseOrdersBySalesOrder(orderId, orderData.storeId, profile) 
