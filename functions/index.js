@@ -1,5 +1,4 @@
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
-const { onRequest } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore } = require('firebase-admin/firestore');
@@ -53,28 +52,4 @@ exports.onUserWrite = onDocumentWritten('users/{userId}', async (event) => {
   }
 
   return null;
-});
-
-exports.backfillClaims = onRequest(async (req, res) => {
-  try {
-    const db = getFirestore();
-    const auth = getAuth();
-    const usersSnap = await db.collection('users').get();
-    let count = 0;
-
-    for (const doc of usersSnap.docs) {
-      const data = doc.data();
-      const userId = doc.id;
-      const role = data.role || 'user';
-      const assignedStores = data.assignedStores || [];
-
-      await auth.setCustomUserClaims(userId, { role, stores: assignedStores });
-      count++;
-    }
-
-    res.status(200).send(`Successfully backfilled claims for ${count} users.`);
-  } catch (error) {
-    console.error('Backfill error:', error);
-    res.status(500).send(`Error: ${error.message}`);
-  }
 });

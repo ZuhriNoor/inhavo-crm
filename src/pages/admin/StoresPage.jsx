@@ -18,6 +18,7 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
       address: editStore?.address || '',
       bankDetails: editStore?.bankDetails || '',
       defaultTerms: editStore?.defaultTerms || '',
+      paymentTerms: editStore?.paymentTerms || '',
     },
   });
 
@@ -108,6 +109,15 @@ const StoreModal = ({ store: editStore, onClose, onSaved }) => {
                 rows={2}
                 className={inputCls + ' resize-none'}
                 placeholder="1. Payment 100% advance..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Payment Terms (For Sale Order PDF)</label>
+              <textarea
+                {...register('paymentTerms')}
+                rows={2}
+                className={inputCls + ' resize-none'}
+                placeholder="e.g. 50% advance on order confirmation, balance before delivery."
               />
             </div>
           </div>

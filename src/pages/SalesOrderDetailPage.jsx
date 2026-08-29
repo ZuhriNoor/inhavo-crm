@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, CheckSquare, Shield, FileText, ExternalLink, Paperclip, Plus, Trash2, Eye, Download, Image as ImageIcon, Truck, Edit2 } from 'lucide-react';
-import { getSaleOrder, updateSaleOrderStatus, deleteSalesOrderAttachment } from '../services/salesOrdersService';
+import { ArrowLeft, Package, CheckSquare, Shield, FileText, ExternalLink, Paperclip, Plus, Trash2, Eye, Download, Image as ImageIcon, Truck, Edit2, Wallet } from 'lucide-react';
+import { getSaleOrder, updateSaleOrderStatus, deleteSalesOrderAttachment, deleteSalesOrderPayment } from '../services/salesOrdersService';
 import { getDocketsBySaleOrder } from '../services/docketsService';
 import { getWarrantiesBySaleOrder } from '../services/warrantiesService';
 import { getPurchaseOrdersBySalesOrder, deletePurchaseOrder } from '../services/purchaseOrdersService';
@@ -12,18 +12,22 @@ import PurchaseOrderModal from '../components/purchaseOrders/PurchaseOrderModal'
 import PurchaseOrderEditModal from '../components/purchaseOrders/PurchaseOrderEditModal';
 import SalesOrderEditModal from '../components/salesOrders/SalesOrderEditModal';
 import SalesOrderAttachmentModal from '../components/salesOrders/SalesOrderAttachmentModal';
+import SalesOrderPaymentModal from '../components/salesOrders/SalesOrderPaymentModal';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { DocketPDF } from '../utils/docketPdfTemplate';
 import { WarrantyPDF } from '../utils/warrantyPdfTemplate';
 import { PurchaseOrderPDF } from '../utils/purchaseOrderPdfTemplate';
+import { SalesOrderPDF } from '../utils/salesOrderPdfTemplate';
 import { getDocketTemplates } from '../services/docketsService';
 import { formatDate } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
+import { useStore } from '../contexts/StoreContext';
 
 export default function SalesOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, profile, user } = useAuth();
+  const { availableStores } = useStore();
   const canViewPO = isAdmin || profile?.canViewPurchaseOrders === true || profile?.canViewPurchaseOrders === 'true';
   const [order, setOrder] = useState(null);
   const [dockets, setDockets] = useState([]);
@@ -31,21 +35,29 @@ export default function SalesOrderDetailPage() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('items'); // items, warranties, purchaseOrders
-  
+
   const [docketModalOpen, setDocketModalOpen] = useState(false);
   const [selectedItemForDocket, setSelectedItemForDocket] = useState(null);
   const [editingDocket, setEditingDocket] = useState(null);
-  
+
   const [warrantyModalOpen, setWarrantyModalOpen] = useState(false);
   const [poModalOpen, setPoModalOpen] = useState(false);
   const [selectedPo, setSelectedPo] = useState(null);
   const [editPoModalOpen, setEditPoModalOpen] = useState(false);
   const [editOrderModalOpen, setEditOrderModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
   const [docketTemplates, setDocketTemplates] = useState([]);
+
+  const currentStore = availableStores.find(s => s.id === order?.storeId);
+  const preparedBy = {
+    name: profile?.displayName || user?.email || 'Unknown User',
+    phone: profile?.phone || '',
+    location: profile?.location || '',
+  };
 
   useEffect(() => {
     fetchData();
@@ -98,6 +110,17 @@ export default function SalesOrderDetailPage() {
     }
   };
 
+  const handleDeletePayment = async (payment) => {
+    if (!confirm(`Delete payment of ₹${Number(payment.amount).toLocaleString('en-IN')} recorded on ${payment.date}?`)) return;
+    try {
+      await deleteSalesOrderPayment(orderId, payment);
+      fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete payment', err);
+      alert('Failed to delete payment');
+    }
+  };
+
   const handleDeleteAttachment = async (attachment) => {
     if (!confirm(`Delete attachment "${attachment.name}"?`)) return;
     try {
@@ -140,6 +163,21 @@ export default function SalesOrderDetailPage() {
             >
               <Edit2 size={16} /> Edit Order
             </button>
+            <PDFDownloadLink
+              document={
+                <SalesOrderPDF
+                  order={order}
+                  storeAddress={currentStore?.address || ''}
+                  storeBankDetails={currentStore?.bankDetails || ''}
+                  paymentTerms={currentStore?.paymentTerms || ''}
+                  preparedBy={preparedBy}
+                />
+              }
+              fileName={`${order.salesOrderNumber}.pdf`}
+              className="px-3.5 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-100 text-xs sm:text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              {({ loading: pdfLoading }) => pdfLoading ? 'Preparing...' : <><FileText size={16} /> Print / Download PDF</>}
+            </PDFDownloadLink>
             {canViewPO && (
               <button
                 type="button"
@@ -316,6 +354,78 @@ export default function SalesOrderDetailPage() {
                   </table>
                 </div>
               </div>
+
+              {/* Payment Details Card */}
+              {(() => {
+                const payments = order.payments || [];
+                const totalPaid = payments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+                const remaining = Math.max((order.totalAmount || 0) - totalPaid, 0);
+                return (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+                    <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/80 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Wallet size={16} className="text-purple-600 dark:text-purple-400" />
+                        <h3 className="font-semibold text-gray-900 dark:text-slate-100">Payment Details</h3>
+                      </div>
+                      <button
+                        onClick={() => setPaymentModalOpen(true)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg font-medium border border-purple-200 dark:border-purple-800 transition-all"
+                      >
+                        <Plus size={13} /> Record Payment
+                      </button>
+                    </div>
+
+                    <div className="p-5 flex flex-col md:flex-row gap-6">
+                      <div className="flex-1 min-w-0">
+                        {payments.length === 0 ? (
+                          <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-3">No payments recorded yet.</p>
+                        ) : (
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {payments
+                              .slice()
+                              .sort((a, b) => new Date(b.date) - new Date(a.date))
+                              .map((p) => (
+                                <div
+                                  key={p.id}
+                                  className="flex items-center justify-between gap-2 p-2.5 bg-gray-50/70 dark:bg-slate-700/40 border border-gray-200/80 dark:border-slate-700 rounded-lg group"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                                      ₹{Number(p.amount).toLocaleString('en-IN')}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
+                                      {formatDate(p.date)}{p.method ? ` · ${p.method}` : ''}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDeletePayment(p)}
+                                    className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                                    title="Delete payment"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="md:w-56 shrink-0 md:border-l border-gray-100 dark:border-slate-700 md:pl-6 space-y-2">
+                        <div className="flex justify-between md:flex-col md:gap-0.5 text-xs text-gray-500 dark:text-slate-400">
+                          <span>Total Paid</span>
+                          <span className="font-semibold text-gray-900 dark:text-slate-100 text-sm">₹{totalPaid.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between md:flex-col md:gap-0.5 pt-2 border-t border-gray-100 dark:border-slate-700">
+                          <span className="text-xs text-gray-500 dark:text-slate-400">Balance Due</span>
+                          <span className={`text-base font-bold ${remaining > 0 ? 'text-red-600 dark:text-rose-400' : 'text-green-600 dark:text-emerald-400'}`}>
+                            ₹{remaining.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Sidebar Details */}
@@ -627,6 +737,15 @@ export default function SalesOrderDetailPage() {
           isOpen={editOrderModalOpen}
           onClose={() => setEditOrderModalOpen(false)}
           saleOrder={order}
+          onSaved={() => fetchData(true)}
+        />
+      )}
+
+      {paymentModalOpen && (
+        <SalesOrderPaymentModal
+          isOpen={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          orderId={orderId}
           onSaved={() => fetchData(true)}
         />
       )}

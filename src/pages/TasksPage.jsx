@@ -1,5 +1,5 @@
-// TasksPage — standalone tasks list with filtering
-import { useState, useEffect, useCallback } from 'react';
+// TasksPage — standalone tasks list with filtering, sorting and grouping
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, RefreshCw, CheckCircle2, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,8 @@ import { getTasks } from '../services/tasksService';
 import { getUsers } from '../services/usersService';
 import { formatDate, isOverdue, isDueSoon } from '../utils/helpers';
 import TaskModal from '../components/tasks/TaskModal';
+import ListControlsBar from '../components/shared/ListControlsBar';
+import { applyListControls } from '../utils/listControls';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
@@ -15,6 +17,8 @@ const STATUS_CONFIG = {
 };
 
 const FILTER_OPTIONS = ['all', 'pending', 'in-progress', 'completed'];
+const ALL_RECORDS_SIZE = 5000;
+const PAGE_SIZE = 15;
 
 const TasksPage = () => {
   const { activeStore } = useStore();
@@ -23,45 +27,30 @@ const TasksPage = () => {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Pagination State
-  const [pageCursors, setPageCursors] = useState([null]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const PAGE_SIZE = 15;
-  
+
   const [filter, setFilter] = useState('all'); // 'all' | status
+  const [controls, setControls] = useState({ filters: [], sortBy: '', sortDir: 'asc', groupBy: '' });
+  const [page, setPage] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
-    setPageCursors([null]);
-    setCurrentPage(0);
-    fetchTasks(null, 0);
+    fetchTasks();
   }, [activeStore]);
 
-  const fetchTasks = async (cursor, pageIndex) => {
+  const fetchTasks = async () => {
     if (!activeStore) return;
     setLoading(true);
 
     try {
       const [tasksResponse, usersData] = await Promise.all([
-        getTasks([activeStore.id], cursor, PAGE_SIZE, profile),
+        getTasks([activeStore.id], null, ALL_RECORDS_SIZE, profile),
         getUsers(),
       ]);
-      
+
       setTasks(tasksResponse.data);
-      setHasMore(tasksResponse.hasMore);
       setUsers(usersData);
-      
-      if (tasksResponse.hasMore && tasksResponse.lastDoc) {
-        setPageCursors(prev => {
-          const newCursors = [...prev];
-          newCursors[pageIndex + 1] = tasksResponse.lastDoc;
-          return newCursors;
-        });
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -69,39 +58,105 @@ const TasksPage = () => {
     }
   };
 
-  const handleNextPage = () => {
-    if (hasMore) {
-      const nextCursor = pageCursors[currentPage + 1];
-      setCurrentPage(prev => prev + 1);
-      fetchTasks(nextCursor, currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 0) {
-      const prevCursor = pageCursors[currentPage - 1];
-      setCurrentPage(prev => prev - 1);
-      fetchTasks(prevCursor, currentPage - 1);
-    }
-  };
-
   const handleRefresh = () => {
-    setPageCursors([null]);
-    setCurrentPage(0);
-    fetchTasks(null, 0);
+    setPage(0);
+    fetchTasks();
   };
 
-  const filteredTasks = tasks.filter((t) => {
+  const getUser = (uid) => users.find((u) => u.uid === uid);
+
+  const fields = useMemo(() => [
+    { key: 'title', label: 'Title', type: 'text' },
+    {
+      key: 'status', label: 'Status', type: 'select',
+      options: Object.entries(STATUS_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label })),
+    },
+    {
+      key: 'assignedUserId', label: 'Assignee', type: 'select',
+      options: users.map((u) => ({ value: u.uid, label: u.displayName })),
+    },
+    { key: 'deadline', label: 'Deadline', type: 'date', getValue: (t) => t.deadline?.toDate?.() || t.deadline },
+  ], [users]);
+
+  const baseFiltered = tasks.filter((t) => {
     if (filter !== 'all' && t.status !== filter) return false;
     return true;
   });
+
+  const { flat, groups } = useMemo(
+    () => applyListControls(baseFiltered, controls, fields),
+    [baseFiltered, controls, fields]
+  );
+
+  useEffect(() => { setPage(0); }, [controls, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(flat.length / PAGE_SIZE));
+  const pagedFlat = flat.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const filteredTasks = groups ? flat : pagedFlat;
 
   const handleEdit = (task) => {
     setEditingTask(task);
     setShowModal(true);
   };
 
-  const getUser = (uid) => users.find((u) => u.uid === uid);
+  const renderTaskRows = (list) => (
+    <div className="space-y-2">
+      {list.map((task) => {
+        const overdue = isOverdue(task);
+        const dueSoon = isDueSoon(task);
+        const cfg = STATUS_CONFIG[task.status];
+        const StatusIcon = cfg?.icon || Clock;
+        const assignee = getUser(task.assignedUserId);
+
+        return (
+          <div
+            key={task.id}
+            onClick={() => handleEdit(task)}
+            className={`flex items-start gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border cursor-pointer hover:shadow-sm transition-all ${
+              overdue ? 'border-red-200 dark:border-rose-900/60 bg-red-50/20 dark:bg-rose-950/10' : dueSoon ? 'border-yellow-200 dark:border-amber-900/60 bg-yellow-50/20 dark:bg-amber-950/10' : 'border-gray-200 dark:border-slate-700'
+            }`}
+          >
+            {/* Status icon */}
+            <div className={`p-2 rounded-lg ${cfg?.color || 'bg-gray-100 text-gray-500'}`}>
+              <StatusIcon size={15} />
+            </div>
+
+            {/* Main content */}
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-100'}`}>
+                {task.title}
+              </p>
+              {task.description && (
+                <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">{task.description}</p>
+              )}
+              <div className="flex items-center gap-3 mt-1">
+                {task.deadline && (
+                  <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-red-500 dark:text-rose-400 font-medium' : dueSoon ? 'text-yellow-600 dark:text-amber-400 font-medium' : 'text-gray-400 dark:text-slate-500'}`}>
+                    {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
+                    {formatDate(task.deadline?.toDate?.() || task.deadline)}
+                    {overdue && ' · Overdue'}
+                    {dueSoon && !overdue && ' · Due soon'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Assignee */}
+            {assignee && (
+              <span className="text-xs text-gray-500 dark:text-slate-300 bg-gray-50 dark:bg-slate-700 px-2 py-1 rounded-full border border-gray-200 dark:border-slate-600 shrink-0">
+                {assignee.displayName}
+              </span>
+            )}
+
+            {/* Status badge */}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${cfg?.color || ''}`}>
+              {cfg?.label || task.status}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   if (!activeStore) {
     return (
@@ -119,30 +174,32 @@ const TasksPage = () => {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Tasks</h1>
             <span className="text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full">
-              {filteredTasks.length} total
+              {flat.length} total
             </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
           {/* Pagination Controls */}
-          <div className="flex items-center gap-1.5 mr-2">
-            <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {currentPage + 1}</span>
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage === 0 || loading}
-              className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={handleNextPage}
-              disabled={!hasMore || loading}
-              className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          {!groups && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {page + 1}/{totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1 || loading}
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
 
           <button
             onClick={handleRefresh}
@@ -162,7 +219,7 @@ const TasksPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-1 px-6 py-2 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 overflow-x-auto transition-colors">
+      <div className="flex flex-wrap items-center gap-1 px-6 py-2 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 overflow-x-auto transition-colors">
         {FILTER_OPTIONS.map((f) => (
           <button
             key={f}
@@ -176,6 +233,11 @@ const TasksPage = () => {
             {f === 'all' ? 'All' : STATUS_CONFIG[f]?.label || f}
           </button>
         ))}
+      </div>
+
+      {/* Filter / Sort / Group Controls */}
+      <div className="px-6 py-2.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
+        <ListControlsBar fields={fields} value={controls} onChange={setControls} />
       </div>
 
       {/* Tasks list */}
@@ -193,65 +255,23 @@ const TasksPage = () => {
               {filter === 'all' ? 'No tasks yet.' : `No ${filter} tasks.`}
             </p>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredTasks.map((task) => {
-              const overdue = isOverdue(task);
-              const dueSoon = isDueSoon(task);
-              const cfg = STATUS_CONFIG[task.status];
-              const StatusIcon = cfg?.icon || Clock;
-              const assignee = getUser(task.assignedUserId);
-
-              return (
-                <div
-                  key={task.id}
-                  onClick={() => handleEdit(task)}
-                  className={`flex items-start gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border cursor-pointer hover:shadow-sm transition-all ${
-                    overdue ? 'border-red-200 dark:border-rose-900/60 bg-red-50/20 dark:bg-rose-950/10' : dueSoon ? 'border-yellow-200 dark:border-amber-900/60 bg-yellow-50/20 dark:bg-amber-950/10' : 'border-gray-200 dark:border-slate-700'
-                  }`}
-                >
-                  {/* Status icon */}
-                  <div className={`p-2 rounded-lg ${cfg?.color || 'bg-gray-100 text-gray-500'}`}>
-                    <StatusIcon size={15} />
-                  </div>
-
-                  {/* Main content */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-100'}`}>
-                      {task.title}
-                    </p>
-                    {task.description && (
-                      <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">{task.description}</p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1">
-                      {task.deadline && (
-                        <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-red-500 dark:text-rose-400 font-medium' : dueSoon ? 'text-yellow-600 dark:text-amber-400 font-medium' : 'text-gray-400 dark:text-slate-500'}`}>
-                          {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
-                          {formatDate(task.deadline?.toDate?.() || task.deadline)}
-                          {overdue && ' · Overdue'}
-                          {dueSoon && !overdue && ' · Due soon'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Assignee */}
-                  {assignee && (
-                    <span className="text-xs text-gray-500 dark:text-slate-300 bg-gray-50 dark:bg-slate-700 px-2 py-1 rounded-full border border-gray-200 dark:border-slate-600 shrink-0">
-                      {assignee.displayName}
-                    </span>
-                  )}
-
-                  {/* Status badge */}
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${cfg?.color || ''}`}>
-                    {cfg?.label || task.status}
+        ) : groups ? (
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <div key={group.key}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">{group.label}</h3>
+                  <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                    {group.items.length}
                   </span>
                 </div>
-              );
-            })}
+                {renderTaskRows(group.items)}
+              </div>
+            ))}
           </div>
+        ) : (
+          renderTaskRows(filteredTasks)
         )}
-
       </div>
 
       {/* Modal */}

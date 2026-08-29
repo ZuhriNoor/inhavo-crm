@@ -5,6 +5,7 @@ import { createPurchaseOrder } from '../../services/purchaseOrdersService';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PurchaseOrderPDF } from '../../utils/purchaseOrderPdfTemplate';
 import { useStore } from '../../contexts/StoreContext';
+import DateInput from '../shared/DateInput';
 
 export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existingPurchaseOrders = [], onPoCreated }) {
   const [vendors, setVendors] = useState([]);
@@ -242,8 +243,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, saleOrder, existin
                     <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 sm:mb-2">
                       Required Delivery Date
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
                       disabled={allItemsAssigned}

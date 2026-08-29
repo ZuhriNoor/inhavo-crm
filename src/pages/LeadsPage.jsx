@@ -1,5 +1,5 @@
-// LeadsPage — standalone leads list with search and soft-delete toggle
-import { useState, useEffect, useCallback } from 'react';
+// LeadsPage — standalone leads list with search, filter, sort and group
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, RefreshCw, Search, Archive, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
@@ -8,6 +8,11 @@ import { getLeads } from '../services/leadsService';
 import { getStages } from '../services/stagesService';
 import { formatDate } from '../utils/helpers';
 import LeadModal from '../components/leads/LeadModal';
+import ListControlsBar from '../components/shared/ListControlsBar';
+import { applyListControls } from '../utils/listControls';
+
+const ALL_RECORDS_SIZE = 5000;
+const PAGE_SIZE = 15;
 
 const LeadsPage = () => {
   const { activeStore } = useStore();
@@ -17,45 +22,30 @@ const LeadsPage = () => {
   const [leads, setLeads] = useState([]);
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Pagination State
-  const [pageCursors, setPageCursors] = useState([null]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const PAGE_SIZE = 15;
-  
+
   const [search, setSearch] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
+  const [controls, setControls] = useState({ filters: [], sortBy: '', sortDir: 'asc', groupBy: '' });
+  const [page, setPage] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    setPageCursors([null]);
-    setCurrentPage(0);
-    fetchLeads(null, 0);
+    fetchLeads();
   }, [activeStore]);
 
-  const fetchLeads = async (cursor, pageIndex) => {
+  const fetchLeads = async () => {
     if (!activeStore) return;
     setLoading(true);
-    
+
     try {
       const [leadsResponse, stagesData] = await Promise.all([
-        getLeads([activeStore.id], true, cursor, PAGE_SIZE, profile),
+        getLeads([activeStore.id], true, null, ALL_RECORDS_SIZE, profile),
         getStages([activeStore.id]),
       ]);
-      
+
       setLeads(leadsResponse.data);
-      setHasMore(leadsResponse.hasMore);
       setStages(stagesData);
-      
-      if (leadsResponse.hasMore && leadsResponse.lastDoc) {
-        setPageCursors(prev => {
-          const newCursors = [...prev];
-          newCursors[pageIndex + 1] = leadsResponse.lastDoc;
-          return newCursors;
-        });
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -63,36 +53,36 @@ const LeadsPage = () => {
     }
   };
 
-  const handleNextPage = () => {
-    if (hasMore) {
-      const nextCursor = pageCursors[currentPage + 1];
-      setCurrentPage(prev => prev + 1);
-      fetchLeads(nextCursor, currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 0) {
-      const prevCursor = pageCursors[currentPage - 1];
-      setCurrentPage(prev => prev - 1);
-      fetchLeads(prevCursor, currentPage - 1);
-    }
-  };
-
   const handleRefresh = () => {
-    setPageCursors([null]);
-    setCurrentPage(0);
-    fetchLeads(null, 0);
+    setPage(0);
+    fetchLeads();
   };
 
-  // Filter leads based on deleted toggle and search query
-  const filteredLeads = leads.filter((l) => {
-    // 1. Deleted filter
-    if (!showDeleted && l.deleted) return false;
-    if (showDeleted && !l.deleted) return false; 
-    if (!showDeleted && l.deleted) return false;
+  const getStageName = (stageId) => {
+    return stages.find((s) => s.id === stageId)?.name || 'Unknown';
+  };
 
-    // 2. Search filter
+  const fields = useMemo(() => [
+    { key: 'customerName', label: 'Customer', type: 'text' },
+    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'leadNumber', label: 'Lead ID', type: 'text' },
+    {
+      key: 'stageId', label: 'Stage', type: 'select',
+      options: stages.map((s) => ({ value: s.id, label: s.name })),
+    },
+    { key: 'expectedRevenue', label: 'Expected Revenue', type: 'number' },
+    { key: 'createdAt', label: 'Created Date', type: 'date', getValue: (l) => l.createdAt },
+    {
+      key: 'deleted', label: 'Status', type: 'select',
+      options: [{ value: 'false', label: 'Active' }, { value: 'true', label: 'Deleted' }],
+      getValue: (l) => String(!!l.deleted),
+    },
+  ], [stages]);
+
+  const baseFiltered = leads.filter((l) => {
+    if (!showDeleted && l.deleted) return false;
+    if (showDeleted && !l.deleted) return false;
+
     if (search.trim()) {
       const q = search.toLowerCase();
       const matchName = l.customerName?.toLowerCase().includes(q);
@@ -103,9 +93,121 @@ const LeadsPage = () => {
     return true;
   });
 
-  const getStageName = (stageId) => {
-    return stages.find((s) => s.id === stageId)?.name || 'Unknown';
-  };
+  const { flat, groups } = useMemo(
+    () => applyListControls(baseFiltered, controls, fields),
+    [baseFiltered, controls, fields]
+  );
+
+  useEffect(() => { setPage(0); }, [controls, search, showDeleted]);
+
+  const totalPages = Math.max(1, Math.ceil(flat.length / PAGE_SIZE));
+  const pagedFlat = flat.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const filteredLeads = groups ? flat : pagedFlat;
+
+  const renderLeadRows = (list) => (
+    <>
+      {/* Mobile Card List View (< md) */}
+      <div className="block md:hidden space-y-2.5">
+        {list.map((lead) => (
+          <div
+            key={lead.id}
+            onClick={() => navigate(`/leads/${lead.id}`)}
+            className={`p-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm cursor-pointer hover:border-purple-200 dark:hover:border-purple-500 transition-all ${
+              lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold text-purple-700 dark:text-purple-400">
+                {lead.leadNumber || lead.id.slice(-6).toUpperCase()}
+              </span>
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+                {getStageName(lead.stageId)}
+              </span>
+            </div>
+
+            <div className="font-semibold text-sm text-gray-800 dark:text-slate-100">
+              {lead.customerName || 'Unknown'}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-2 text-xs text-gray-500 dark:text-slate-400">
+              <span>{lead.phone || lead.email || 'No contact'}</span>
+              <span className="font-semibold text-gray-700 dark:text-slate-200">
+                {lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : '—'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-slate-700/60 text-[11px]">
+              <span className="text-gray-400 dark:text-slate-500">{formatDate(lead.createdAt)}</span>
+              {lead.deleted ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 dark:text-rose-400">
+                  <Archive size={11} /> Deleted
+                </span>
+              ) : (
+                <span className="inline-flex items-center text-[11px] font-medium text-green-600 dark:text-emerald-400">
+                  Active
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View (>= md) */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
+        <table className="w-full text-left text-sm whitespace-nowrap">
+          <thead className="bg-gray-50 dark:bg-slate-700/60 border-b border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-300">
+            <tr>
+              <th className="px-6 py-3 font-medium">Lead ID</th>
+              <th className="px-6 py-3 font-medium">Customer</th>
+              <th className="px-6 py-3 font-medium">Stage</th>
+              <th className="px-6 py-3 font-medium">Expected Rev.</th>
+              <th className="px-6 py-3 font-medium">Created Date</th>
+              <th className="px-6 py-3 font-medium text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
+            {list.map((lead) => (
+              <tr
+                key={lead.id}
+                onClick={() => navigate(`/leads/${lead.id}`)}
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors ${lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''}`}
+              >
+                <td className="px-6 py-4 font-medium text-purple-700 dark:text-purple-400">
+                  {lead.leadNumber || lead.id.slice(-6).toUpperCase()}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="font-medium text-gray-800 dark:text-slate-100">{lead.customerName || 'Unknown'}</div>
+                  <div className="text-xs text-gray-400 dark:text-slate-400">{lead.phone || lead.email || 'No contact'}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+                    {getStageName(lead.stageId)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-gray-600 dark:text-slate-300 font-medium">
+                  {lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : '—'}
+                </td>
+                <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-xs">
+                  {formatDate(lead.createdAt)}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  {lead.deleted ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 px-2 py-1 rounded-full border border-red-100 dark:border-rose-900/60">
+                      <Archive size={12} /> Deleted
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center text-xs font-medium text-green-600 dark:text-emerald-400 bg-green-50 dark:bg-emerald-950/40 px-2 py-1 rounded-full border border-green-100 dark:border-emerald-900/60">
+                      Active
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
 
   if (!activeStore) {
     return (
@@ -123,7 +225,7 @@ const LeadsPage = () => {
           <div className="flex items-center gap-3">
             <h1 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-slate-100">All Leads</h1>
             <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
-              {filteredLeads.length}
+              {flat.length}
             </span>
           </div>
 
@@ -169,19 +271,19 @@ const LeadsPage = () => {
           </label>
 
           {/* Pagination Controls */}
-          {!search && (
+          {!groups && (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {currentPage + 1}</span>
+              <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {page + 1}/{totalPages}</span>
               <button
-                onClick={handlePrevPage}
-                disabled={currentPage === 0 || loading}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
                 className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={14} />
               </button>
               <button
-                onClick={handleNextPage}
-                disabled={!hasMore || loading}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1 || loading}
                 className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={14} />
@@ -200,7 +302,7 @@ const LeadsPage = () => {
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
-            
+
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center gap-2 px-3.5 py-1.5 text-sm text-white font-medium rounded-lg"
@@ -210,6 +312,11 @@ const LeadsPage = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Filter / Sort / Group Controls */}
+      <div className="px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
+        <ListControlsBar fields={fields} value={controls} onChange={setControls} />
       </div>
 
       {/* Main Content Area */}
@@ -223,110 +330,22 @@ const LeadsPage = () => {
             <Users size={40} className="opacity-20" />
             <p className="text-sm">No leads found matching your criteria.</p>
           </div>
-        ) : (
-          <>
-            {/* Mobile Card List View (< md) */}
-            <div className="block md:hidden space-y-2.5">
-              {filteredLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  onClick={() => navigate(`/leads/${lead.id}`)}
-                  className={`p-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm cursor-pointer hover:border-purple-200 dark:hover:border-purple-500 transition-all ${
-                    lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-purple-700 dark:text-purple-400">
-                      {lead.leadNumber || lead.id.slice(-6).toUpperCase()}
-                    </span>
-                    <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
-                      {getStageName(lead.stageId)}
-                    </span>
-                  </div>
-
-                  <div className="font-semibold text-sm text-gray-800 dark:text-slate-100">
-                    {lead.customerName || 'Unknown'}
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-2 mt-2 text-xs text-gray-500 dark:text-slate-400">
-                    <span>{lead.phone || lead.email || 'No contact'}</span>
-                    <span className="font-semibold text-gray-700 dark:text-slate-200">
-                      {lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : '—'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-slate-700/60 text-[11px]">
-                    <span className="text-gray-400 dark:text-slate-500">{formatDate(lead.createdAt)}</span>
-                    {lead.deleted ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 dark:text-rose-400">
-                        <Archive size={11} /> Deleted
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center text-[11px] font-medium text-green-600 dark:text-emerald-400">
-                        Active
-                      </span>
-                    )}
-                  </div>
+        ) : groups ? (
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <div key={group.key}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">{group.label}</h3>
+                  <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                    {group.items.length}
+                  </span>
                 </div>
-              ))}
-            </div>
-
-            {/* Desktop Table View (>= md) */}
-            <div className="hidden md:block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-x-auto transition-colors">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 dark:bg-slate-700/60 border-b border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-300">
-                  <tr>
-                    <th className="px-6 py-3 font-medium">Lead ID</th>
-                    <th className="px-6 py-3 font-medium">Customer</th>
-                    <th className="px-6 py-3 font-medium">Stage</th>
-                    <th className="px-6 py-3 font-medium">Expected Rev.</th>
-                    <th className="px-6 py-3 font-medium">Created Date</th>
-                    <th className="px-6 py-3 font-medium text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
-                  {filteredLeads.map((lead) => (
-                    <tr 
-                      key={lead.id} 
-                      onClick={() => navigate(`/leads/${lead.id}`)}
-                      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors ${lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''}`}
-                    >
-                      <td className="px-6 py-4 font-medium text-purple-700 dark:text-purple-400">
-                        {lead.leadNumber || lead.id.slice(-6).toUpperCase()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-800 dark:text-slate-100">{lead.customerName || 'Unknown'}</div>
-                        <div className="text-xs text-gray-400 dark:text-slate-400">{lead.phone || lead.email || 'No contact'}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
-                          {getStageName(lead.stageId)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-slate-300 font-medium">
-                        {lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : '—'}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-xs">
-                        {formatDate(lead.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        {lead.deleted ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 px-2 py-1 rounded-full border border-red-100 dark:border-rose-900/60">
-                            <Archive size={12} /> Deleted
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center text-xs font-medium text-green-600 dark:text-emerald-400 bg-green-50 dark:bg-emerald-950/40 px-2 py-1 rounded-full border border-green-100 dark:border-emerald-900/60">
-                            Active
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-          </>
+                {renderLeadRows(group.items)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          renderLeadRows(filteredLeads)
         )}
       </div>
 

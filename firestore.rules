@@ -18,7 +18,9 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
       allow update, delete: if isAdmin();
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.assignedStores == resource.data.assignedStores;
     }
 
     // Stores collection

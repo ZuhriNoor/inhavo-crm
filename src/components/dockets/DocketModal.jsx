@@ -4,6 +4,7 @@ import { createDocket, updateDocketWithFiles, getDocketTemplates } from '../../s
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocketPDF } from '../../utils/docketPdfTemplate';
 import LoadingScreen from '../shared/LoadingScreen';
+import DateInput from '../shared/DateInput';
 import { compressImageFile, loadRemoteImageAsDataUrl, fileToDataUrl } from '../../utils/imageUtils';
 import { useStore } from '../../contexts/StoreContext';
 
@@ -279,8 +280,7 @@ export default function DocketModal({ isOpen, onClose, saleOrder, item, existing
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Target Delivery Date</label>
-                    <input
-                      type="date"
+                    <DateInput
                       className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:border-purple-500 text-sm text-gray-900 dark:text-slate-100 transition-colors"
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}

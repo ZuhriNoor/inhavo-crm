@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, RefreshCw, ShoppingCart, Image as ImageIcon } from 'lucide-react';
 import { updateSaleOrder } from '../../services/salesOrdersService';
 import { compressImageFile } from '../../utils/imageUtils';
+import DateInput from '../shared/DateInput';
 
 export default function SalesOrderEditModal({ isOpen, onClose, saleOrder, onSaved }) {
   const [customerName, setCustomerName] = useState('');
@@ -214,8 +215,7 @@ export default function SalesOrderEditModal({ isOpen, onClose, saleOrder, onSave
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Target Delivery Date</label>
-                <input
-                  type="date"
+                <DateInput
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-purple-500 text-gray-900 dark:text-slate-100"

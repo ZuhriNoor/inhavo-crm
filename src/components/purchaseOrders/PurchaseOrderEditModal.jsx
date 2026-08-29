@@ -5,6 +5,7 @@ import { updatePurchaseOrder } from '../../services/purchaseOrdersService';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PurchaseOrderPDF } from '../../utils/purchaseOrderPdfTemplate';
 import { formatDate } from '../../utils/helpers';
+import DateInput from '../shared/DateInput';
 
 const STATUS_COLORS = {
   Issued: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -336,8 +337,7 @@ export default function PurchaseOrderEditModal({ isOpen, onClose, po, onSaved })
                   <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                     Target Delivery Date
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={deliveryDate}
                     onChange={(e) => setDeliveryDate(e.target.value)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:border-purple-500"

@@ -6,6 +6,7 @@ import { createLead, updateLead } from '../../services/leadsService';
 import { notifyLeadAssigned } from '../../services/notificationsService';
 import { toInputDate, fromInputDate } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
+import DateInput from '../shared/DateInput';
 
 const LEAD_SOURCES = [
   'Walk-in Showroom',
@@ -236,9 +237,9 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
                 />
               </Field>
               <Field label="Expected Closing" icon={Target}>
-                <input
+                <DateInput
                   {...register('expectedClosingDate')}
-                  type="date"
+                  displayValue={watch('expectedClosingDate')}
                   className={inputCls(true)}
                 />
               </Field>

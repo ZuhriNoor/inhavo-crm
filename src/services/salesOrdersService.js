@@ -150,6 +150,38 @@ export const deleteSalesOrderAttachment = async (orderId, attachment) => {
   }
 };
 
+/** Record a payment received against a Sales Order */
+export const addSalesOrderPayment = async (orderId, payment) => {
+  if (!orderId || !payment) throw new Error('Order ID and payment are required');
+
+  const paymentData = {
+    id: `pay_${Date.now()}`,
+    amount: Number(payment.amount) || 0,
+    date: payment.date || new Date().toISOString().slice(0, 10),
+    method: payment.method || '',
+    note: payment.note || '',
+    recordedAt: new Date().toISOString(),
+  };
+
+  const orderRef = doc(db, SALES_ORDERS_COL, orderId);
+  await updateDoc(orderRef, {
+    payments: arrayUnion(paymentData),
+    updatedAt: serverTimestamp(),
+  });
+
+  return paymentData;
+};
+
+/** Remove a recorded payment from a Sales Order */
+export const deleteSalesOrderPayment = async (orderId, payment) => {
+  if (!orderId || !payment) return;
+  const orderRef = doc(db, SALES_ORDERS_COL, orderId);
+  await updateDoc(orderRef, {
+    payments: arrayRemove(payment),
+    updatedAt: serverTimestamp(),
+  });
+};
+
 /** Convert Quotation to Sale Order (Atomic Transaction) */
 export const createSaleOrderFromQuotation = async (quotation) => {
   return await runTransaction(db, async (transaction) => {
@@ -184,6 +216,7 @@ export const createSaleOrderFromQuotation = async (quotation) => {
       leadId: quotation.leadId,
       storeId: quotation.storeId,
       customerDetails: quotation.customerDetails,
+      deliveryDate: quotation.deliveryDate || '',
       items: quotation.items,
       extraCosts: quotation.extraCosts || [],
       productsTotal: quotation.productsTotal || quotation.totalAmount || 0,
