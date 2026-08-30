@@ -29,6 +29,7 @@ export default function SalesOrderDetailPage() {
   const { isAdmin, profile, user } = useAuth();
   const { availableStores } = useStore();
   const canViewPO = isAdmin || profile?.canViewPurchaseOrders === true || profile?.canViewPurchaseOrders === 'true';
+  const canManagePayments = isAdmin || profile?.canManagePayments === true || profile?.canManagePayments === 'true';
   const [order, setOrder] = useState(null);
   const [dockets, setDockets] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -367,12 +368,14 @@ export default function SalesOrderDetailPage() {
                         <Wallet size={16} className="text-purple-600 dark:text-purple-400" />
                         <h3 className="font-semibold text-gray-900 dark:text-slate-100">Payment Details</h3>
                       </div>
-                      <button
-                        onClick={() => setPaymentModalOpen(true)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg font-medium border border-purple-200 dark:border-purple-800 transition-all"
-                      >
-                        <Plus size={13} /> Record Payment
-                      </button>
+                      {canManagePayments && (
+                        <button
+                          onClick={() => setPaymentModalOpen(true)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg font-medium border border-purple-200 dark:border-purple-800 transition-all"
+                        >
+                          <Plus size={13} /> Record Payment
+                        </button>
+                      )}
                     </div>
 
                     <div className="p-5 flex flex-col md:flex-row gap-6">
@@ -397,13 +400,15 @@ export default function SalesOrderDetailPage() {
                                       {formatDate(p.date)}{p.method ? ` · ${p.method}` : ''}
                                     </p>
                                   </div>
-                                  <button
-                                    onClick={() => handleDeletePayment(p)}
-                                    className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                                    title="Delete payment"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
+                                  {canManagePayments && (
+                                    <button
+                                      onClick={() => handleDeletePayment(p)}
+                                      className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                                      title="Delete payment"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                           </div>

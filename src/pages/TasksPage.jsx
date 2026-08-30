@@ -169,20 +169,56 @@ const TasksPage = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Tasks</h1>
-            <span className="text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full">
+      <div className="flex flex-col gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-slate-100 truncate">Tasks</h1>
+            <span className="text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full shrink-0">
               {flat.length} total
             </span>
           </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button
+              onClick={() => { setEditingTask(null); setShowModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm text-white font-medium rounded-lg"
+              style={{ background: '#875a7b' }}
+            >
+              <Plus size={14} /> New Task
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        {/* Status filter pills */}
+        <div className="flex flex-wrap items-center gap-1 overflow-x-auto">
+          {FILTER_OPTIONS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
+                filter === f
+                  ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200'
+              }`}
+            >
+              {f === 'all' ? 'All' : STATUS_CONFIG[f]?.label || f}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5">
+          <ListControlsBar fields={fields} value={controls} onChange={setControls} />
+
           {/* Pagination Controls */}
           {!groups && (
-            <div className="flex items-center gap-1.5 mr-2">
+            <div className="flex items-center gap-1.5 lg:ml-auto">
               <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {page + 1}/{totalPages}</span>
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
@@ -200,44 +236,7 @@ const TasksPage = () => {
               </button>
             </div>
           )}
-
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => { setEditingTask(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm text-white font-medium rounded-lg"
-            style={{ background: '#875a7b' }}
-          >
-            <Plus size={15} /> New Task
-          </button>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-1 px-6 py-2 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 overflow-x-auto transition-colors">
-        {FILTER_OPTIONS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
-              filter === f
-                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200'
-            }`}
-          >
-            {f === 'all' ? 'All' : STATUS_CONFIG[f]?.label || f}
-          </button>
-        ))}
-      </div>
-
-      {/* Filter / Sort / Group Controls */}
-      <div className="px-6 py-2.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
-        <ListControlsBar fields={fields} value={controls} onChange={setControls} />
       </div>
 
       {/* Tasks list */}

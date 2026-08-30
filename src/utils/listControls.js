@@ -113,12 +113,27 @@ export const sortItems = (data, sortBy, sortDir, fields) => {
   });
 };
 
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
 export const groupItems = (data, groupBy, fields) => {
   if (!groupBy) return null;
   const field = fields.find((f) => f.key === groupBy);
   if (!field) return null;
 
+  // Group dates by calendar day, not exact timestamp, so same-day records land in one group.
+  const dayKeyFor = (raw) => {
+    const ts = toComparable(raw);
+    if (ts == null) return null;
+    const d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+
   const labelFor = (raw) => {
+    if (field.type === 'date') {
+      const dayTs = dayKeyFor(raw);
+      return dayTs == null ? 'None' : DATE_LABEL_FORMATTER.format(new Date(dayTs));
+    }
     if (field.type === 'select' && field.options) {
       return field.options.find((o) => o.value === String(raw))?.label ?? (raw || 'None');
     }
@@ -130,11 +145,26 @@ export const groupItems = (data, groupBy, fields) => {
   const map = new Map();
   for (const row of data) {
     const raw = getFieldValue(row, field);
-    const key = raw == null || raw === '' ? '__none__' : String(raw);
+    let key;
+    if (field.type === 'date') {
+      const dayTs = dayKeyFor(raw);
+      key = dayTs == null ? '__none__' : String(dayTs);
+    } else {
+      key = raw == null || raw === '' ? '__none__' : String(raw);
+    }
     if (!map.has(key)) map.set(key, { key, label: labelFor(raw), items: [] });
     map.get(key).items.push(row);
   }
-  return Array.from(map.values());
+
+  const groups = Array.from(map.values());
+  if (field.type === 'date') {
+    groups.sort((a, b) => {
+      if (a.key === '__none__') return 1;
+      if (b.key === '__none__') return -1;
+      return Number(a.key) - Number(b.key);
+    });
+  }
+  return groups;
 };
 
 /** Runs filters -> sort -> group in one call. Returns { flat, groups } where groups is null if no groupBy. */

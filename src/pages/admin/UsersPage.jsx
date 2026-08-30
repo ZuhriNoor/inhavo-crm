@@ -50,6 +50,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
       location: editUser?.location || '',
       assignedStores: editUser?.assignedStores || [],
       canViewPurchaseOrders: editUser?.canViewPurchaseOrders || false,
+      canManagePayments: editUser?.canManagePayments || false,
       dataAccessLevel: editUser?.dataAccessLevel || 'all',
     },
   });
@@ -68,6 +69,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           location: data.location || '',
           assignedStores,
           canViewPurchaseOrders: data.canViewPurchaseOrders,
+          canManagePayments: data.canManagePayments,
           dataAccessLevel: data.dataAccessLevel,
         });
         if (authUser && (editUser.uid || editUser.id) === authUser.uid) {
@@ -86,6 +88,7 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
           location: data.location || '',
           assignedStores,
           canViewPurchaseOrders: data.canViewPurchaseOrders,
+          canManagePayments: data.canManagePayments,
           dataAccessLevel: data.dataAccessLevel,
           createdAt: serverTimestamp(),
         });
@@ -193,6 +196,17 @@ const UserModal = ({ user: editUser, stores, onClose, onSaved }) => {
                 className="accent-purple-600 w-4 h-4"
               />
               <span className="text-gray-700 dark:text-slate-200">Can View Purchase Orders</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/60 px-1 rounded py-1 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700/40">
+              <input
+                type="checkbox"
+                {...register('canManagePayments')}
+                className="accent-purple-600 w-4 h-4"
+              />
+              <span className="text-gray-700 dark:text-slate-200">Can Manage Payments (Sale Orders)</span>
             </label>
           </div>
 

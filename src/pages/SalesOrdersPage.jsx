@@ -142,55 +142,55 @@ export default function SalesOrdersPage() {
   return (
     <div className="h-full flex flex-col bg-gray-50/50 dark:bg-slate-900 transition-colors">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center">
-            <Package className="text-purple-500 dark:text-purple-400" size={20} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Sales Orders</h1>
-            <p className="text-sm text-gray-500 dark:text-slate-400">Manage orders, dockets, and warranties</p>
-          </div>
+      <header className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center shrink-0">
+          <Package className="text-purple-500 dark:text-purple-400" size={18} />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-slate-100 truncate">Sales Orders</h1>
+          <p className="hidden sm:block text-sm text-gray-500 dark:text-slate-400">Manage orders, dockets, and warranties</p>
         </div>
       </header>
 
       {/* Filters Bar */}
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 transition-colors space-y-3">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
-            <input
-              type="text"
-              placeholder="Search by order number or customer..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <div className="px-4 sm:px-6 py-2.5 border-b border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 transition-colors">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={15} />
+              <input
+                type="text"
+                placeholder="Search by order number or customer..."
+                className="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <ListControlsBar fields={fields} value={controls} onChange={setControls} />
           </div>
 
           {/* Pagination Controls */}
           {!groups && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-slate-400 mr-2">Page {page + 1}/{totalPages}</span>
+            <div className="flex items-center gap-1.5 lg:ml-auto">
+              <span className="text-xs text-gray-500 dark:text-slate-400 mx-1">Page {page + 1}/{totalPages}</span>
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || loading}
-                className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={14} />
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1 || loading}
-                className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={14} />
               </button>
             </div>
           )}
         </div>
-
-        <ListControlsBar fields={fields} value={controls} onChange={setControls} />
       </div>
 
       {/* Main Content */}

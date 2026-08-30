@@ -115,7 +115,7 @@ export default function ListControlsBar({ fields, value, onChange }) {
           <ListFilter size={14} /> Filters {filters.length > 0 && `(${filters.length})`}
         </button>
         {filterOpen && (
-          <div className="absolute z-20 mt-1.5 w-72 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-3 space-y-2">
+          <div className="absolute z-20 mt-1.5 w-[85vw] max-w-72 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-3 space-y-2">
             <div className="flex items-center gap-1.5">
               <select className={`${inputClass} flex-1 min-w-0`} value={draftField} onChange={(e) => setDraftField(e.target.value)}>
                 {fields.map((f) => (
