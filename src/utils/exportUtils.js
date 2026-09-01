@@ -4,6 +4,13 @@ export const exportToExcel = (filename, headers, rows) => {
   const escapeCell = (cell) => {
     if (cell === null || cell === undefined) return '""';
     const str = String(cell).replace(/"/g, '""');
+    // Dates come pre-formatted as DD-MM-YYYY. Excel auto-detects and
+    // reinterprets plain date-like strings using the system locale
+    // (e.g. MM-DD-YYYY), silently swapping day/month. Wrapping in an
+    // Excel text-literal formula forces it to keep the literal text.
+    if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+      return `"=""${str}"""`;
+    }
     return `"${str}"`;
   };
 
