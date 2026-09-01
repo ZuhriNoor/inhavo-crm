@@ -34,27 +34,21 @@ export const formatDate = (val) => {
     d = val.toDate();
   } else if (typeof val === 'string') {
     const trimmed = val.trim();
-    if (trimmed.includes('-')) {
-      const parts = trimmed.split('-');
-      if (parts[0].length === 4 && parts.length === 3) {
-        // YYYY-MM-DD -> DD-MM-YYYY
-        const [y, m, day] = parts;
-        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
-      } else if (parts[2]?.length === 4 && parts.length === 3) {
-        // Already DD-MM-YYYY
-        return trimmed;
-      }
-    } else if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts[0].length === 4 && parts.length === 3) {
-        // YYYY/MM/DD -> DD-MM-YYYY
-        const [y, m, day] = parts;
-        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
-      } else if (parts[2]?.length === 4 && parts.length === 3) {
-        // DD/MM/YYYY -> DD-MM-YYYY
-        const [day, m, y] = parts;
-        return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
-      }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      // YYYY-MM-DD -> DD-MM-YYYY
+      const [y, m, day] = trimmed.split('-');
+      return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+    } else if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
+      // Already DD-MM-YYYY
+      return trimmed;
+    } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(trimmed)) {
+      // YYYY/MM/DD -> DD-MM-YYYY
+      const [y, m, day] = trimmed.split('/');
+      return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      // DD/MM/YYYY -> DD-MM-YYYY
+      const [day, m, y] = trimmed.split('/');
+      return `${day.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
     }
     d = new Date(trimmed);
   } else if (typeof val === 'number') {
