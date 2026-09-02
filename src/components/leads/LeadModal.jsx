@@ -38,7 +38,7 @@ const inputCls = (hasIcon) =>
     hasIcon ? 'pl-9' : 'pl-3'
   }`;
 
-const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
+const LeadModal = ({ lead, stages, users, storeId, defaultStageId, onClose, onSaved }) => {
   const { user, profile } = useAuth();
   const isEditing = !!lead;
 
@@ -48,6 +48,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -63,7 +64,7 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
       lookingFor: '',
       priority: 0,
       assignedUserId: user?.uid || '',
-      stageId: stages?.[0]?.id || '',
+      stageId: defaultStageId || stages?.[0]?.id || '',
       notes: '',
       nextFollowUp: '',
     },
@@ -94,9 +95,27 @@ const LeadModal = ({ lead, stages, users, storeId, onClose, onSaved }) => {
     }
   }, [lead, reset, stages]);
 
+  // Stages may still be loading when the modal mounts, which would leave a new
+  // lead with an empty stageId even though the select visually shows a stage.
+  useEffect(() => {
+    if (!stages?.length) return;
+    const current = getValues('stageId');
+    const isOrphan = current && !stages.some((s) => s.id === current);
+    if (!current || (!isEditing && isOrphan)) {
+      setValue('stageId', defaultStageId || stages[0].id);
+    }
+  }, [stages, defaultStageId, isEditing, getValues, setValue]);
+
   const onSubmit = async (data) => {
+    const stageId = data.stageId || defaultStageId || stages?.[0]?.id || '';
+    if (!stageId) {
+      console.error('Cannot save lead: no pipeline stage available');
+      return;
+    }
+
     const payload = {
       ...data,
+      stageId,
       storeId,
       expectedRevenue: Number(data.expectedRevenue) || 0,
       expectedClosingDate: data.expectedClosingDate ? fromInputDate(data.expectedClosingDate) : null,

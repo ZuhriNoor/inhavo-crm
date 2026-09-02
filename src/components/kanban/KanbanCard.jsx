@@ -6,6 +6,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getInitials, stringToColor } from '../../utils/helpers';
 import { updateLead } from '../../services/leadsService';
+import PhoneLink from '../shared/PhoneLink';
 
 const KanbanCard = ({ lead, users }) => {
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ const KanbanCard = ({ lead, users }) => {
         {lead.phone && (
           <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400 shrink-0">
             <Phone size={11} className="shrink-0 text-gray-400 dark:text-slate-500" />
-            <span className="truncate">{lead.phone}</span>
+            <PhoneLink phone={lead.phone} className="truncate" />
           </div>
         )}
       </div>

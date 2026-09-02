@@ -94,10 +94,10 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
+    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             {isEditing ? 'Edit Task' : 'New Task'}
           </h2>
@@ -110,7 +110,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-4 sm:px-6 py-4 space-y-4 overflow-y-auto">
           {/* Title */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Title *</label>
@@ -136,7 +136,7 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
           </div>
 
           {/* Assigned To + Deadline */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Assigned To</label>
               <select {...register('assignedUserId')} className={inputCls}>
@@ -165,39 +165,39 @@ const TaskModal = ({ task, leadId, storeId, users, onClose, onSaved }) => {
           </div>
 
           {/* Footer buttons */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              {isEditing && task?.status !== 'completed' && (
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  className="px-3 py-1.5 text-sm text-green-600 dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg border border-green-200 dark:border-emerald-800 transition-all"
-                >
-                  ✓ Complete
-                </button>
-              )}
-              {isEditing && (
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
+            {isEditing && (
+              <div className="flex items-center gap-2">
+                {task?.status !== 'completed' && (
+                  <button
+                    type="button"
+                    onClick={handleComplete}
+                    className="flex-1 sm:flex-none px-3 py-2 text-sm text-green-600 dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg border border-green-200 dark:border-emerald-800 transition-all"
+                  >
+                    ✓ Complete
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="px-3 py-1.5 text-sm text-red-500 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg border border-red-200 dark:border-rose-800 transition-all"
+                  className="flex-1 sm:flex-none px-3 py-2 text-sm text-red-500 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg border border-red-200 dark:border-rose-800 transition-all"
                 >
                   Delete
                 </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
+              </div>
+            )}
+            <div className="flex items-center gap-2 sm:ml-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-transparent"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 text-sm text-white font-medium rounded-lg flex items-center gap-2 disabled:opacity-60"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm text-white font-medium rounded-lg flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{ background: '#875a7b' }}
               >
                 {isSubmitting ? (

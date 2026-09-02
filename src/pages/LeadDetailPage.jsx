@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useStore } from '../contexts/StoreContext';
 import LeadModal from '../components/leads/LeadModal';
 import TaskModal from '../components/tasks/TaskModal';
+import PhoneLink from '../components/shared/PhoneLink';
 import QuotationModal from '../components/quotations/QuotationModal';
 import QuotationDetailModal from '../components/quotations/QuotationDetailModal';
 import { pdf } from '@react-pdf/renderer';
@@ -256,7 +257,7 @@ const LeadDetailPage = () => {
           </h3>
           <InfoRow icon={User} label="Customer" value={lead.customerName} />
           <InfoRow icon={Building2} label="Company" value={lead.company} />
-          <InfoRow icon={Phone} label="Phone" value={lead.phone} />
+          <InfoRow icon={Phone} label="Phone" value={lead.phone ? <PhoneLink phone={lead.phone} /> : null} />
           <InfoRow icon={Mail} label="Email" value={lead.email} />
           <InfoRow icon={MapPin} label="Location" value={lead.address} />
 

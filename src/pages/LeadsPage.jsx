@@ -9,6 +9,7 @@ import { getStages } from '../services/stagesService';
 import { formatDate } from '../utils/helpers';
 import LeadModal from '../components/leads/LeadModal';
 import ListControlsBar from '../components/shared/ListControlsBar';
+import PhoneLink from '../components/shared/PhoneLink';
 import { applyListControls } from '../utils/listControls';
 
 const ALL_RECORDS_SIZE = 5000;
@@ -157,7 +158,9 @@ const LeadsPage = () => {
             </div>
 
             <div className="flex items-center justify-between gap-2 mt-2 text-xs text-gray-500 dark:text-slate-400">
-              <span>{lead.phone || lead.email || 'No contact'}</span>
+              <span>
+                {lead.phone ? <PhoneLink phone={lead.phone} /> : (lead.email || 'No contact')}
+              </span>
               <span className="font-semibold text-gray-700 dark:text-slate-200">
                 {lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : '—'}
               </span>
@@ -207,7 +210,9 @@ const LeadsPage = () => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="font-medium text-gray-800 dark:text-slate-100">{lead.customerName || 'Unknown'}</div>
-                  <div className="text-xs text-gray-400 dark:text-slate-400">{lead.phone || lead.email || 'No contact'}</div>
+                  <div className="text-xs text-gray-400 dark:text-slate-400">
+                    {lead.phone ? <PhoneLink phone={lead.phone} /> : (lead.email || 'No contact')}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
