@@ -167,15 +167,37 @@ const LeadDetailPage = () => {
   const prevLeadId = hasPrevLead ? leadIds[leadIndex - 1] : null;
   const nextLeadId = hasNextLead ? leadIds[leadIndex + 1] : null;
 
+  // Persist origin page in sessionStorage for resilience across refreshes
+  useEffect(() => {
+    if (location.state?.from) {
+      try {
+        sessionStorage.setItem('crm_lead_from', location.state.from);
+      } catch (e) {}
+    }
+  }, [location.state?.from]);
+
   const handlePrevLead = () => {
     if (prevLeadId) {
-      navigate(`/leads/${prevLeadId}`, { state: { leadIds } });
+      const fromRoute = location.state?.from || sessionStorage.getItem('crm_lead_from');
+      navigate(`/leads/${prevLeadId}`, { replace: true, state: { leadIds, from: fromRoute } });
     }
   };
 
   const handleNextLead = () => {
     if (nextLeadId) {
-      navigate(`/leads/${nextLeadId}`, { state: { leadIds } });
+      const fromRoute = location.state?.from || sessionStorage.getItem('crm_lead_from');
+      navigate(`/leads/${nextLeadId}`, { replace: true, state: { leadIds, from: fromRoute } });
+    }
+  };
+
+  const handleBack = () => {
+    const fromRoute = location.state?.from || sessionStorage.getItem('crm_lead_from');
+    if (fromRoute && fromRoute !== location.pathname) {
+      navigate(fromRoute);
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/leads');
     }
   };
 
@@ -205,7 +227,8 @@ const LeadDetailPage = () => {
     if (!confirm('Are you sure you want to delete this lead?')) return;
     try {
       await deleteLead(leadId);
-      navigate('/');
+      const fromRoute = location.state?.from || sessionStorage.getItem('crm_lead_from') || '/';
+      navigate(fromRoute);
     } catch (err) {
       console.error('Failed to delete lead:', err);
     }
@@ -236,7 +259,7 @@ const LeadDetailPage = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
         <p className="text-base font-medium">Lead not found</p>
-        <Link to="/" className="text-sm text-purple-600 underline">Back to Kanban</Link>
+        <button onClick={handleBack} className="text-sm text-purple-600 underline">Back</button>
       </div>
     );
   }
@@ -249,9 +272,9 @@ const LeadDetailPage = () => {
         <div className="flex items-center justify-between gap-2">
           {/* Back button */}
           <button
-            onClick={() => navigate('/')}
+            onClick={handleBack}
             className="p-1.5 -ml-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all shrink-0"
-            title="Back to Kanban"
+            title="Back"
           >
             <ArrowLeft size={18} />
           </button>

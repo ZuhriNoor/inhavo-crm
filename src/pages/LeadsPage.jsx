@@ -136,7 +136,7 @@ const LeadsPage = () => {
     try {
       sessionStorage.setItem('crm_active_lead_ids', JSON.stringify(leadIds));
     } catch (e) {}
-    navigate(`/leads/${leadId}`, { state: { leadIds } });
+    navigate(`/leads/${leadId}`, { state: { leadIds, from: '/leads' } });
   };
 
   const renderLeadRows = (list) => (

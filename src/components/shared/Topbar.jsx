@@ -39,7 +39,7 @@ const Topbar = ({ onMenuClick }) => {
     setNotifOpen(false);
     
     if (n.type === 'lead_assigned' && n.relatedId) {
-      navigate(`/leads/${n.relatedId}`);
+      navigate(`/leads/${n.relatedId}`, { state: { from: pathname } });
     } else if ((n.type === 'task_due' || n.type === 'task_overdue')) {
       navigate('/tasks');
     }

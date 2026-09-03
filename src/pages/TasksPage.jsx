@@ -168,7 +168,7 @@ const TasksPage = () => {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/leads/${task.leadId}`);
+                    navigate(`/leads/${task.leadId}`, { state: { from: '/tasks' } });
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800/80 transition-colors group/lead cursor-pointer max-w-full min-w-0"
                   title="Open Connected Lead"

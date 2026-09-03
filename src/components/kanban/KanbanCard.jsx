@@ -34,7 +34,7 @@ const KanbanCard = ({ lead, users }) => {
   const handleClick = (e) => {
     // Don't navigate if we're dragging
     if (isDragging) return;
-    navigate(`/leads/${lead.id}`);
+    navigate(`/leads/${lead.id}`, { state: { from: '/' } });
   };
 
   const [localPriority, setLocalPriority] = useState(lead.priority || 0);

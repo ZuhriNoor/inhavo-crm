@@ -196,7 +196,7 @@ const TaskModal = ({
     const targetId = leadData?.id || currentLeadId;
     if (targetId) {
       onClose();
-      navigate(`/leads/${targetId}`);
+      navigate(`/leads/${targetId}`, { state: { from: window.location.pathname } });
     }
   };
 
