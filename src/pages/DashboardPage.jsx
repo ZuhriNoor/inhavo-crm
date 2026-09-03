@@ -36,6 +36,11 @@ const DashboardPage = () => {
       setStages(stagesData);
       setLeads(leadsResponse.data);
       setUsers(usersData);
+      if (leadsResponse?.data?.length > 0) {
+        try {
+          sessionStorage.setItem('crm_active_lead_ids', JSON.stringify(leadsResponse.data.map((l) => l.id)));
+        } catch (e) {}
+      }
     } catch (err) {
       console.error(err);
       if (showLoading) setError('Failed to load data. Please refresh.');

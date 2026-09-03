@@ -83,11 +83,18 @@ export const createTask = async (data) => {
   const creator = data.createdBy || uid;
 
   let leadVisibleTo = [];
+  let leadDataToSave = {};
   if (data.leadId) {
     const { getDoc, doc } = await import('firebase/firestore');
     const leadSnap = await getDoc(doc(db, 'leads', data.leadId));
     if (leadSnap.exists()) {
-      leadVisibleTo = leadSnap.data().visibleTo || [];
+      const lData = leadSnap.data();
+      leadVisibleTo = lData.visibleTo || [];
+      leadDataToSave = {
+        leadNumber: lData.leadNumber || null,
+        leadTitle: lData.opportunityTitle || lData.customerName || 'Lead',
+        customerName: lData.customerName || null,
+      };
     }
   }
 
@@ -95,6 +102,7 @@ export const createTask = async (data) => {
 
   const ref = await addDoc(collection(db, TASKS_COL), {
     ...data,
+    ...leadDataToSave,
     createdBy: creator,
     visibleTo,
     createdAt: serverTimestamp(),
@@ -105,20 +113,33 @@ export const createTask = async (data) => {
 /** Update a task */
 export const updateTask = async (id, data) => {
   let updateData = { ...data, updatedAt: serverTimestamp() };
-  
-  if (data.assignedUserId !== undefined) {
-    const { getDoc, doc } = await import('firebase/firestore');
+  const { getDoc, doc } = await import('firebase/firestore');
+
+  // If leadId changed or assignedUserId changed, recompute visibleTo and lead details
+  if (data.leadId !== undefined || data.assignedUserId !== undefined) {
     const snap = await getDoc(doc(db, TASKS_COL, id));
     if (snap.exists()) {
       const existing = snap.data();
+      const currentLeadId = data.leadId !== undefined ? data.leadId : existing.leadId;
+      const assignedUserId = data.assignedUserId !== undefined ? data.assignedUserId : existing.assignedUserId;
+
       let leadVisibleTo = [];
-      if (existing.leadId) {
-        const leadSnap = await getDoc(doc(db, 'leads', existing.leadId));
+      if (currentLeadId) {
+        const leadSnap = await getDoc(doc(db, 'leads', currentLeadId));
         if (leadSnap.exists()) {
-          leadVisibleTo = leadSnap.data().visibleTo || [];
+          const lData = leadSnap.data();
+          leadVisibleTo = lData.visibleTo || [];
+          updateData.leadNumber = lData.leadNumber || null;
+          updateData.leadTitle = lData.opportunityTitle || lData.customerName || 'Lead';
+          updateData.customerName = lData.customerName || null;
         }
+      } else if (data.leadId === null) {
+        updateData.leadNumber = null;
+        updateData.leadTitle = null;
+        updateData.customerName = null;
       }
-      updateData.visibleTo = [...new Set([...leadVisibleTo, existing.createdBy, data.assignedUserId].filter(Boolean))];
+
+      updateData.visibleTo = [...new Set([...leadVisibleTo, existing.createdBy, assignedUserId].filter(Boolean))];
     }
   }
 

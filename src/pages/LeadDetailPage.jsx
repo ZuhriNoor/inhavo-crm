@@ -1,12 +1,13 @@
 // LeadDetailPage — full lead detail view with tasks and quotations
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Trash2, Phone, Mail, MapPin, Building2,
   Calendar, User, StickyNote, Plus, CheckSquare, FileText, Tag,
-  Globe, IndianRupee, Target, Star, Briefcase, RefreshCcw, Archive
+  Globe, IndianRupee, Target, Star, Briefcase, RefreshCcw, Archive,
+  ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
-import { getLead, deleteLead, restoreLead } from '../services/leadsService';
+import { getLead, getLeads, deleteLead, restoreLead } from '../services/leadsService';
 import { getTasksByLead } from '../services/tasksService';
 import { getQuotationsByLead } from '../services/quotationsService';
 import { getStages } from '../services/stagesService';
@@ -21,15 +22,16 @@ import QuotationModal from '../components/quotations/QuotationModal';
 import QuotationDetailModal from '../components/quotations/QuotationDetailModal';
 import { pdf } from '@react-pdf/renderer';
 import QuotationPDF from '../utils/pdfTemplate';
+import useSwipeGesture from '../hooks/useSwipeGesture';
 
 const InfoRow = ({ icon: Icon, label, value }) => {
   if (!value) return null;
   return (
-    <div className="flex items-start gap-3 py-2">
-      <Icon size={16} className="text-gray-400 dark:text-slate-500 mt-0.5 shrink-0" />
-      <div>
-        <p className="text-xs text-gray-400 dark:text-slate-400">{label}</p>
-        <p className="text-sm text-gray-800 dark:text-slate-100 font-medium">{value}</p>
+    <div className="flex items-start gap-2.5 py-1.5">
+      <Icon size={15} className="text-gray-400 dark:text-slate-500 mt-0.5 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] text-gray-400 dark:text-slate-400 font-medium">{label}</p>
+        <p className="text-sm text-gray-800 dark:text-slate-100 font-medium break-words">{value}</p>
       </div>
     </div>
   );
@@ -44,6 +46,7 @@ const STATUS_COLORS = {
 const LeadDetailPage = () => {
   const { leadId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAdmin, profile } = useAuth();
   const { activeStore } = useStore();
 
@@ -55,6 +58,23 @@ const LeadDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'quotations'
 
+  // Lead navigation sequence
+  const [leadIds, setLeadIds] = useState(() => {
+    if (location.state?.leadIds && Array.isArray(location.state.leadIds)) {
+      return location.state.leadIds;
+    }
+    try {
+      const cached = sessionStorage.getItem('crm_active_lead_ids');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.includes(leadId)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
@@ -62,6 +82,7 @@ const LeadDetailPage = () => {
   const [editingQuotation, setEditingQuotation] = useState(null);
   const [viewingQuotation, setViewingQuotation] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
 
   const handleDownload = async (q) => {
     setDownloadingId(q.id);
@@ -116,6 +137,70 @@ const LeadDetailPage = () => {
     loadData();
   }, [loadData]);
 
+  // Update leadIds if location.state changes
+  useEffect(() => {
+    if (location.state?.leadIds && Array.isArray(location.state.leadIds)) {
+      setLeadIds(location.state.leadIds);
+    }
+  }, [location.state]);
+
+  // Fallback fetch if leadIds is empty
+  useEffect(() => {
+    if (leadIds.length === 0 && lead?.storeId) {
+      getLeads([lead.storeId], false, null, 100, profile)
+        .then((res) => {
+          if (res?.data?.length > 0) {
+            const ids = res.data.map((l) => l.id);
+            setLeadIds(ids);
+            try {
+              sessionStorage.setItem('crm_active_lead_ids', JSON.stringify(ids));
+            } catch (e) {}
+          }
+        })
+        .catch(() => {});
+    }
+  }, [lead?.storeId, leadIds.length]);
+
+  const leadIndex = leadIds.indexOf(leadId);
+  const hasPrevLead = leadIndex > 0;
+  const hasNextLead = leadIndex >= 0 && leadIndex < leadIds.length - 1;
+  const prevLeadId = hasPrevLead ? leadIds[leadIndex - 1] : null;
+  const nextLeadId = hasNextLead ? leadIds[leadIndex + 1] : null;
+
+  const handlePrevLead = () => {
+    if (prevLeadId) {
+      navigate(`/leads/${prevLeadId}`, { state: { leadIds } });
+    }
+  };
+
+  const handleNextLead = () => {
+    if (nextLeadId) {
+      navigate(`/leads/${nextLeadId}`, { state: { leadIds } });
+    }
+  };
+
+  const isModalOpen = showEditModal || showTaskModal || showQuotationModal || !!viewingQuotation;
+
+  const pageSwipeHandlers = useSwipeGesture({
+    onSwipeLeft: handleNextLead,
+    onSwipeRight: handlePrevLead,
+    enabled: !isModalOpen && leadIds.length > 1,
+  });
+
+  useEffect(() => {
+    if (isModalOpen || leadIds.length <= 1) return;
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevLead();
+      } else if (e.key === 'ArrowRight') {
+        handleNextLead();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, leadIndex, leadIds]);
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this lead?')) return;
     try {
@@ -157,134 +242,218 @@ const LeadDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors">
+    <div {...pageSwipeHandlers} className="flex flex-col h-full overflow-hidden bg-gray-50/50 dark:bg-slate-900 transition-colors touch-pan-y">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
-        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+      <div className="px-4 sm:px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shrink-0 transition-colors">
+        {/* Top Control Bar: Back button on left, Navigator & Actions on right */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Back button */}
           <button
             onClick={() => navigate('/')}
-            className="p-1.5 mt-0.5 sm:mt-0 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all shrink-0"
+            className="p-1.5 -ml-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all shrink-0"
+            title="Back to Kanban"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="flex-1 min-w-0">
-            {lead.leadNumber && (
-              <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 mb-0.5 tracking-wider">
-                {lead.leadNumber}
+
+          {/* Right: Lead Navigator + Edit/Delete Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {leadIds.length > 1 && (
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700/60 p-0.5 rounded-lg border border-gray-200 dark:border-slate-600">
+                <button
+                  type="button"
+                  onClick={handlePrevLead}
+                  disabled={!hasPrevLead}
+                  className="p-1 rounded text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Previous Lead (Swipe Right / Left Arrow)"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <span className="text-[11px] font-semibold text-gray-600 dark:text-slate-300 px-1.5 font-mono whitespace-nowrap">
+                  {leadIndex + 1}/{leadIds.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextLead}
+                  disabled={!hasNextLead}
+                  className="p-1 rounded text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Next Lead (Swipe Left / Right Arrow)"
+                >
+                  <ChevronRight size={15} />
+                </button>
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-base font-semibold text-gray-800 dark:text-slate-100 truncate">
-                {lead.opportunityTitle || lead.customerName}
-              </h1>
-              {currentStage && (
-                <span
-                  className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white shrink-0"
-                  style={{ background: currentStage.color || '#875a7b' }}
+
+            {lead.deleted ? (
+              <button
+                onClick={handleRestore}
+                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-green-600 dark:text-emerald-400 hover:text-green-700 dark:hover:text-emerald-300 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all border border-green-200 dark:border-emerald-800 font-medium"
+              >
+                <RefreshCcw size={13} />
+                <span>Restore</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-700 dark:text-slate-200 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-all border border-gray-200 dark:border-slate-600 font-medium shadow-xs"
                 >
-                  {currentStage.name}
-                </span>
-              )}
-              {lead.deleted && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-red-100 dark:border-rose-900/60 shrink-0">
-                  <Archive size={12} /> Deleted
-                </span>
-              )}
-              {lead.priority > 0 && (
-                <div className="flex items-center text-yellow-400 shrink-0">
-                  {Array.from({ length: lead.priority }).map((_, i) => (
-                    <Star key={i} size={14} fill="currentColor" />
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 dark:text-slate-400 truncate">
-              {lead.customerName}{lead.company ? ` · ${lead.company}` : ''}
-            </p>
+                  <Edit2 size={13} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-red-600 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300 bg-red-50/50 dark:bg-rose-950/20 hover:bg-red-100/70 dark:hover:bg-rose-950/40 rounded-lg transition-all border border-red-200 dark:border-rose-900/60 font-medium"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-          {lead.deleted ? (
-            <button
-              onClick={handleRestore}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-green-600 dark:text-emerald-400 hover:text-green-700 dark:hover:text-emerald-300 hover:bg-green-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all border border-green-200 dark:border-emerald-800"
-            >
-              <RefreshCcw size={14} /> Restore
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all border border-gray-200 dark:border-slate-700 sm:border-transparent"
+        {/* Title, Stage, Customer & Lead Number */}
+        <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            {lead.leadNumber && (
+              <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 tracking-wide font-mono bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-800/80 shrink-0">
+                {lead.leadNumber}
+              </span>
+            )}
+            {currentStage && (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white shrink-0 shadow-xs"
+                style={{ background: currentStage.color || '#875a7b' }}
               >
-                <Edit2 size={14} /> Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-red-500 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300 hover:bg-red-50 dark:hover:bg-rose-950/40 rounded-lg transition-all border border-red-100 dark:border-rose-900/60 sm:border-transparent"
-              >
-                <Trash2 size={14} /> Delete
-              </button>
-            </>
-          )}
+                {currentStage.name}
+              </span>
+            )}
+            {lead.deleted && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-red-100 dark:border-rose-900/60 shrink-0">
+                <Archive size={11} /> Deleted
+              </span>
+            )}
+            {lead.priority > 0 && (
+              <div className="flex items-center text-yellow-400 shrink-0">
+                {Array.from({ length: lead.priority }).map((_, i) => (
+                  <Star key={i} size={13} fill="currentColor" />
+                ))}
+              </div>
+            )}
+            <span className="text-xs text-gray-500 dark:text-slate-400 font-medium truncate">
+              Customer: <strong className="text-gray-700 dark:text-slate-200 font-medium">{lead.customerName}</strong>
+              {lead.company ? ` · ${lead.company}` : ''}
+            </span>
+          </div>
+
+          <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-slate-100 leading-tight">
+            {lead.opportunityTitle || lead.customerName}
+          </h1>
         </div>
       </div>
 
       {/* Body */}
       <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         {/* Left: Lead info */}
-        <div className="w-full md:w-72 shrink-0 bg-white dark:bg-slate-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 md:overflow-y-auto p-4 sm:p-5 space-y-1 transition-colors">
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">
-            Sales Details
-          </h3>
-          <InfoRow icon={IndianRupee} label="Expected Revenue" value={lead.expectedRevenue ? `₹${lead.expectedRevenue.toLocaleString('en-IN')}` : null} />
-          <InfoRow 
-            icon={Target} 
-            label="Expected Closing" 
-            value={lead.expectedClosingDate ? formatDate(lead.expectedClosingDate?.toDate?.() || lead.expectedClosingDate) : null} 
-          />
-          <InfoRow icon={Globe} label="Lead Source" value={lead.source} />
-          <InfoRow
-            icon={User}
-            label="Assigned To"
-            value={assignedUser?.displayName || 'Unassigned'}
-          />
+        <div className="w-full md:w-72 shrink-0 bg-white dark:bg-slate-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 md:overflow-y-auto p-4 sm:p-5 transition-colors">
+          {/* Mobile Accordion Header */}
+          <div className="flex items-center justify-between md:hidden mb-2">
+            <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+              Lead Information
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowMobileDetails(!showMobileDetails)}
+              className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1 py-0.5 px-2 rounded-md hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors"
+            >
+              <span>{showMobileDetails ? 'Hide details' : 'Show details'}</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${showMobileDetails ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
 
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-            Contact Information
-          </h3>
-          <InfoRow icon={User} label="Customer" value={lead.customerName} />
-          <InfoRow icon={Building2} label="Company" value={lead.company} />
-          <InfoRow icon={Phone} label="Phone" value={lead.phone ? <PhoneLink phone={lead.phone} /> : null} />
-          <InfoRow icon={Mail} label="Email" value={lead.email} />
-          <InfoRow icon={MapPin} label="Location" value={lead.address} />
-
-          {(lead.lookingFor || lead.notes || lead.nextFollowUp) && (
-            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-              <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-3">
-                Additional Details
-              </h3>
-              <InfoRow
-                icon={Calendar}
-                label="Next Follow-up"
-                value={lead.nextFollowUp ? formatDate(lead.nextFollowUp?.toDate?.() || lead.nextFollowUp) : null}
-              />
-              {lead.lookingFor && (
-                <div className="py-2">
-                  <p className="text-xs text-gray-400 dark:text-slate-400 mb-1">Looking For (Products)</p>
-                  <p className="text-sm text-gray-800 dark:text-slate-100 font-medium whitespace-pre-wrap">{lead.lookingFor}</p>
-                </div>
-              )}
-              {lead.notes && (
-                <div className="py-2 mt-2">
-                  <p className="text-xs text-gray-400 dark:text-slate-400 mb-1">Notes</p>
-                  <p className="text-sm text-gray-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{lead.notes}</p>
-                </div>
-              )}
+          {/* Quick 1-row summary on mobile when collapsed */}
+          {!showMobileDetails && (
+            <div className="md:hidden flex items-center justify-between gap-3 text-xs text-gray-600 dark:text-slate-300 py-1">
+              <div className="flex items-center gap-2 truncate">
+                {lead.phone && (
+                  <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium">
+                    <Phone size={12} />
+                    <PhoneLink phone={lead.phone} />
+                  </span>
+                )}
+                {lead.address && <span className="text-gray-400 truncate">· {lead.address}</span>}
+              </div>
+              {Number(lead.expectedRevenue) > 0 ? (
+                <span className="font-semibold text-gray-800 dark:text-slate-100 shrink-0">
+                  ₹{Number(lead.expectedRevenue).toLocaleString('en-IN')}
+                </span>
+              ) : null}
             </div>
           )}
+
+          {/* Full details (always visible on desktop, toggleable on mobile) */}
+          <div className={`${showMobileDetails ? 'block' : 'hidden md:block'} space-y-4`}>
+            <div>
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">
+                Sales Details
+              </h3>
+              <div className="space-y-0.5">
+                <InfoRow icon={IndianRupee} label="Expected Revenue" value={lead.expectedRevenue ? `₹${Number(lead.expectedRevenue).toLocaleString('en-IN')}` : null} />
+                <InfoRow 
+                  icon={Target} 
+                  label="Expected Closing" 
+                  value={lead.expectedClosingDate ? formatDate(lead.expectedClosingDate?.toDate?.() || lead.expectedClosingDate) : null} 
+                />
+                <InfoRow icon={Globe} label="Lead Source" value={lead.source} />
+                <InfoRow
+                  icon={User}
+                  label="Assigned To"
+                  value={assignedUser?.displayName || 'Unassigned'}
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-gray-100 dark:border-slate-700/60">
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">
+                Contact Information
+              </h3>
+              <div className="space-y-0.5">
+                <InfoRow icon={User} label="Customer" value={lead.customerName} />
+                <InfoRow icon={Building2} label="Company" value={lead.company} />
+                <InfoRow icon={Phone} label="Phone" value={lead.phone ? <PhoneLink phone={lead.phone} /> : null} />
+                <InfoRow icon={Mail} label="Email" value={lead.email} />
+                <InfoRow icon={MapPin} label="Location" value={lead.address} />
+              </div>
+            </div>
+
+            {(lead.lookingFor || lead.notes || lead.nextFollowUp) && (
+              <div className="pt-3 border-t border-gray-100 dark:border-slate-700/60">
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">
+                  Additional Details
+                </h3>
+                <div className="space-y-1.5">
+                  <InfoRow
+                    icon={Calendar}
+                    label="Next Follow-up"
+                    value={lead.nextFollowUp ? formatDate(lead.nextFollowUp?.toDate?.() || lead.nextFollowUp) : null}
+                  />
+                  {lead.lookingFor && (
+                    <div className="py-1">
+                      <p className="text-[11px] text-gray-400 dark:text-slate-400 font-medium mb-0.5">Looking For (Products)</p>
+                      <p className="text-sm text-gray-800 dark:text-slate-100 font-medium whitespace-pre-wrap">{lead.lookingFor}</p>
+                    </div>
+                  )}
+                  {lead.notes && (
+                    <div className="py-1">
+                      <p className="text-[11px] text-gray-400 dark:text-slate-400 font-medium mb-0.5">Notes</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{lead.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: Tasks & Quotations */}
@@ -339,8 +508,9 @@ const LeadDetailPage = () => {
                     {tasks.map((task) => (
                       <div
                         key={task.id}
-                        className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border transition-all ${
-                          isOverdue(task) ? 'border-red-200 dark:border-rose-900/60 bg-red-50/30 dark:bg-rose-950/10' : 'border-gray-200 dark:border-slate-700'
+                        onClick={() => { setEditingTask(task); setShowTaskModal(true); }}
+                        className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border cursor-pointer hover:shadow-xs transition-all ${
+                          isOverdue(task) ? 'border-red-200 dark:border-rose-900/60 bg-red-50/30 dark:bg-rose-950/10' : 'border-gray-200 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-800'
                         }`}
                       >
                         <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -364,7 +534,7 @@ const LeadDetailPage = () => {
                             {task.status}
                           </span>
                           <button
-                            onClick={() => { setEditingTask(task); setShowTaskModal(true); }}
+                            onClick={(e) => { e.stopPropagation(); setEditingTask(task); setShowTaskModal(true); }}
                             className="p-1 rounded text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                           >
                             <Edit2 size={13} />
@@ -471,7 +641,10 @@ const LeadDetailPage = () => {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
+          tasks={tasks}
+          onNavigateTask={(newTask) => setEditingTask(newTask)}
           leadId={leadId}
+          lead={lead}
           storeId={lead?.storeId || activeStore?.id}
           users={users}
           onClose={() => { setShowTaskModal(false); setEditingTask(null); }}

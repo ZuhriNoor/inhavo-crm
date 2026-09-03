@@ -1,10 +1,12 @@
 // TasksPage — standalone tasks list with filtering, sorting and grouping
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, RefreshCw, CheckCircle2, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, RefreshCw, CheckCircle2, Clock, AlertCircle, ChevronLeft, ChevronRight, User, ExternalLink } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getTasks } from '../services/tasksService';
 import { getUsers } from '../services/usersService';
+import { getLeads } from '../services/leadsService';
 import { formatDate, isOverdue, isDueSoon } from '../utils/helpers';
 import TaskModal from '../components/tasks/TaskModal';
 import ListControlsBar from '../components/shared/ListControlsBar';
@@ -21,11 +23,13 @@ const ALL_RECORDS_SIZE = 5000;
 const PAGE_SIZE = 15;
 
 const TasksPage = () => {
+  const navigate = useNavigate();
   const { activeStore } = useStore();
   const { user, isAdmin, profile } = useAuth();
 
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] = useState('all'); // 'all' | status
@@ -44,13 +48,15 @@ const TasksPage = () => {
     setLoading(true);
 
     try {
-      const [tasksResponse, usersData] = await Promise.all([
+      const [tasksResponse, usersData, leadsResponse] = await Promise.all([
         getTasks([activeStore.id], null, ALL_RECORDS_SIZE, profile),
         getUsers(),
+        getLeads([activeStore.id], false, null, ALL_RECORDS_SIZE, profile),
       ]);
 
       setTasks(tasksResponse.data);
       setUsers(usersData);
+      setLeads(leadsResponse?.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -64,6 +70,7 @@ const TasksPage = () => {
   };
 
   const getUser = (uid) => users.find((u) => u.uid === uid);
+  const leadsMap = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
 
   const fields = useMemo(() => [
     { key: 'title', label: 'Title', type: 'text' },
@@ -107,51 +114,89 @@ const TasksPage = () => {
         const cfg = STATUS_CONFIG[task.status];
         const StatusIcon = cfg?.icon || Clock;
         const assignee = getUser(task.assignedUserId);
+        const lead = task.leadId ? leadsMap.get(task.leadId) : null;
+        const leadTitle = task.leadTitle || lead?.opportunityTitle || lead?.customerName;
+        const leadNum = task.leadNumber || lead?.leadNumber;
 
         return (
           <div
             key={task.id}
             onClick={() => handleEdit(task)}
-            className={`flex items-start gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border cursor-pointer hover:shadow-sm transition-all ${
-              overdue ? 'border-red-200 dark:border-rose-900/60 bg-red-50/20 dark:bg-rose-950/10' : dueSoon ? 'border-yellow-200 dark:border-amber-900/60 bg-yellow-50/20 dark:bg-amber-950/10' : 'border-gray-200 dark:border-slate-700'
+            className={`p-3.5 sm:p-4 bg-white dark:bg-slate-800 rounded-xl border cursor-pointer hover:shadow-sm transition-all ${
+              overdue
+                ? 'border-red-200 dark:border-rose-900/60 bg-red-50/20 dark:bg-rose-950/10'
+                : dueSoon
+                ? 'border-yellow-200 dark:border-amber-900/60 bg-yellow-50/20 dark:bg-amber-950/10'
+                : 'border-gray-200 dark:border-slate-700'
             }`}
           >
-            {/* Status icon */}
-            <div className={`p-2 rounded-lg ${cfg?.color || 'bg-gray-100 text-gray-500'}`}>
-              <StatusIcon size={15} />
-            </div>
+            {/* Top row: Status Icon + Title & Description on left, Assignee & Status badges on right */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                <div className={`p-1.5 sm:p-2 rounded-lg shrink-0 mt-0.5 ${cfg?.color || 'bg-gray-100 text-gray-500'}`}>
+                  <StatusIcon size={15} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-semibold truncate ${task.status === 'completed' ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-100'}`}>
+                    {task.title}
+                  </p>
+                  {task.description && (
+                    <p className="text-xs text-gray-400 dark:text-slate-400 truncate mt-0.5">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-            {/* Main content */}
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-100'}`}>
-                {task.title}
-              </p>
-              {task.description && (
-                <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5 truncate">{task.description}</p>
-              )}
-              <div className="flex items-center gap-3 mt-1">
-                {task.deadline && (
-                  <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-red-500 dark:text-rose-400 font-medium' : dueSoon ? 'text-yellow-600 dark:text-amber-400 font-medium' : 'text-gray-400 dark:text-slate-500'}`}>
-                    {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
-                    {formatDate(task.deadline?.toDate?.() || task.deadline)}
-                    {overdue && ' · Overdue'}
-                    {dueSoon && !overdue && ' · Due soon'}
+              {/* Badges on right */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {assignee && (
+                  <span className="text-[11px] font-medium text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full border border-gray-200 dark:border-slate-600">
+                    {assignee.displayName}
                   </span>
                 )}
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${cfg?.color || ''}`}>
+                  {cfg?.label || task.status}
+                </span>
               </div>
             </div>
 
-            {/* Assignee */}
-            {assignee && (
-              <span className="text-xs text-gray-500 dark:text-slate-300 bg-gray-50 dark:bg-slate-700 px-2 py-1 rounded-full border border-gray-200 dark:border-slate-600 shrink-0">
-                {assignee.displayName}
-              </span>
-            )}
+            {/* Bottom Row: Connected Lead Chip & Deadline */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+              {task.leadId ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/leads/${task.leadId}`);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800/80 transition-colors group/lead cursor-pointer max-w-full min-w-0"
+                  title="Open Connected Lead"
+                >
+                  <User size={11} className="text-purple-500 dark:text-purple-400 shrink-0" />
+                  <span className="truncate max-w-[130px] sm:max-w-[220px]">
+                    {leadTitle || 'Connected Lead'}
+                  </span>
+                  {leadNum && (
+                    <span className="font-mono text-[10px] text-purple-600 dark:text-purple-400 font-bold shrink-0">
+                      [{leadNum}]
+                    </span>
+                  )}
+                  <ExternalLink size={10} className="text-purple-400 group-hover/lead:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+              ) : (
+                <span className="text-xs text-gray-400 dark:text-slate-500 italic">Standalone task</span>
+              )}
 
-            {/* Status badge */}
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${cfg?.color || ''}`}>
-              {cfg?.label || task.status}
-            </span>
+              {task.deadline && (
+                <span className={`text-xs flex items-center gap-1 shrink-0 ${overdue ? 'text-red-500 dark:text-rose-400 font-medium' : dueSoon ? 'text-yellow-600 dark:text-amber-400 font-medium' : 'text-gray-400 dark:text-slate-500'}`}>
+                  {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
+                  {formatDate(task.deadline?.toDate?.() || task.deadline)}
+                  {overdue && ' · Overdue'}
+                  {dueSoon && !overdue && ' · Due soon'}
+                </span>
+              )}
+            </div>
           </div>
         );
       })}
@@ -277,8 +322,12 @@ const TasksPage = () => {
       {showModal && (
         <TaskModal
           task={editingTask}
+          tasks={filteredTasks}
+          onNavigateTask={(newTask) => setEditingTask(newTask)}
           storeId={activeStore?.id}
           users={users}
+          leads={leads}
+          lead={editingTask?.leadId ? leadsMap.get(editingTask.leadId) : null}
           onClose={() => { setShowModal(false); setEditingTask(null); }}
           onSaved={handleRefresh}
         />

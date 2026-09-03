@@ -131,6 +131,14 @@ const LeadsPage = () => {
   const pagedFlat = flat.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const filteredLeads = groups ? flat : pagedFlat;
 
+  const handleLeadClick = (leadId) => {
+    const leadIds = flat.map((l) => l.id);
+    try {
+      sessionStorage.setItem('crm_active_lead_ids', JSON.stringify(leadIds));
+    } catch (e) {}
+    navigate(`/leads/${leadId}`, { state: { leadIds } });
+  };
+
   const renderLeadRows = (list) => (
     <>
       {/* Mobile Card List View (< md) */}
@@ -138,7 +146,7 @@ const LeadsPage = () => {
         {list.map((lead) => (
           <div
             key={lead.id}
-            onClick={() => navigate(`/leads/${lead.id}`)}
+            onClick={() => handleLeadClick(lead.id)}
             className={`p-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm cursor-pointer hover:border-purple-200 dark:hover:border-purple-500 transition-all ${
               lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''
             }`}
@@ -199,7 +207,7 @@ const LeadsPage = () => {
             {list.map((lead) => (
               <tr
                 key={lead.id}
-                onClick={() => navigate(`/leads/${lead.id}`)}
+                onClick={() => handleLeadClick(lead.id)}
                 className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors ${lead.deleted ? 'opacity-60 bg-red-50/30 dark:bg-rose-950/20' : ''}`}
               >
                 <td className="px-6 py-4 font-medium text-purple-700 dark:text-purple-400">
